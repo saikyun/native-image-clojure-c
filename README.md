@@ -3,8 +3,8 @@
 ## Prerequisites
 
 * graalvm -- tested with `graalvm-ce-java11-20.2.0-dev`: https://github.com/graalvm/graalvm-ce-dev-builds/releases
-  * set `GRAALVM_HOME = /path/to/graalvm-ce-java11-20.2.0-dev/Contents/Home/`
-  * set `JAVA_HOME = $GRAALVM_HOME`
+  * `export GRAALVM_HOME = "/path/to/graalvm-ce-java11-20.2.0-dev/Contents/Home/"`
+  * `export JAVA_HOME = $GRAALVM_HOME`
 * leiningen -- https://leiningen.org/
 
 I've only tested on mac.
