@@ -1,8 +1,12 @@
 (ns core
-  (:import TripletLib)
+  (:require [other-triple])
+  #_(:import TripletLib)
+  (:import wat.cool.OOTripletLib)
+  
   (:gen-class))
 
 (defn -main [& args]
-  (let [t (TripletLib/allocRandomTriple)]
+  (println "lul")
+  (let [t (OOTripletLib/allocRandomTriple)]
     (println (.getId (.subject t)))
-    (TripletLib/freeTriple t)))
+    (OOTripletLib/freeTriple t)))

@@ -31,11 +31,12 @@ import org.graalvm.word.PointerBase;
 import org.graalvm.word.SignedWord;
 import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordFactory;
+import wat.cool.OOTriple;
 
 @CContext(Headers.class)
 @CLibrary("triple")
 public class TripletLib {
-
+    /*
     @CEnum("type_t")
     enum DataType {
         I,
@@ -48,14 +49,14 @@ public class TripletLib {
         @CEnumLookup
         public static native DataType fromCValue(int value);
     }
+    */
+    @CFunction(transition = Transition.NO_TRANSITION)
+    public static native OOTriple allocRandomTriple();
 
     @CFunction(transition = Transition.NO_TRANSITION)
-    public static native Triple allocRandomTriple();
+    public static native void freeTriple(OOTriple triple);
 
-    @CFunction(transition = Transition.NO_TRANSITION)
-    public static native void freeTriple(Triple triple);
-
-    public static long getThing(Triple triple) {
+    public static long getThing(OOTriple triple) {
 	return triple.subject().getId();
     }
 }

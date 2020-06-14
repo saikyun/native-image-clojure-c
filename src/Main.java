@@ -31,6 +31,7 @@ import org.graalvm.word.PointerBase;
 import org.graalvm.word.SignedWord;
 import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordFactory;
+import wat.cool.OOTriple;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -39,8 +40,8 @@ public class Main {
         long sum = 0;
 
         for (long i = 0; i < iterations; i++) {
-            Triple triple = TripletLib.allocRandomTriple();
-            sum += triple.subject().getId() + triple.predicate().getId() + triple.object().getId();
+            OOTriple triple = TripletLib.allocRandomTriple();
+            sum += triple.subject().getId(); // + triple.predicate().getId() + triple.object().getId();
             TripletLib.freeTriple(triple);
         }
 
