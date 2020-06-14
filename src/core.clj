@@ -1,7 +1,8 @@
 (ns core
-  (:import HelloWorld)
+  (:import TripletLib)
   (:gen-class))
 
 (defn -main [& args]
-  (System/loadLibrary "HelloWorld")
-  (HelloWorld/print))
+  (let [t (TripletLib/allocRandomTriple)]
+    (println (.getId (.subject t)))
+    (TripletLib/freeTriple t)))

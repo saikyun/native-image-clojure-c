@@ -32,71 +32,21 @@ import org.graalvm.word.SignedWord;
 import org.graalvm.word.UnsignedWord;
 import org.graalvm.word.WordFactory;
 
-@CContext(Headers.class)
-@CLibrary("triple")
 public class Main {
-
-    @CEnum("type_t")
-    enum DataType {
-        I,
-        F,
-        S;
-
-        @CEnumValue
-        public native int getCValue();
-
-        @CEnumLookup
-        public static native DataType fromCValue(int value);
-    }
-
-    @CStruct("value_t")
-    interface Value extends PointerBase {
-
-        @CField("type")
-        int getDataType();
-
-        @CField("id")
-        @AllowWideningCast
-        long getId();
-
-    }
-
-    @CStruct("triple_t")
-    interface Triple extends PointerBase {
-
-        @CFieldAddress("subject")
-        Value subject();
-
-        @CFieldAddress("predicate")
-        Value predicate();
-
-        @CFieldAddress("object")
-        Value object();
-
-    }
-
-    @CFunction(transition = Transition.NO_TRANSITION)
-    public static native Triple allocRandomTriple();
-
-    @CFunction(transition = Transition.NO_TRANSITION)
-    public static native void freeTriple(Triple triple);
-
     public static void main(String[] args) throws IOException {
-
         long iterations = 100_000_000L;
         long start = System.currentTimeMillis();
         long sum = 0;
 
         for (long i = 0; i < iterations; i++) {
-            Triple triple = allocRandomTriple();
+            Triple triple = TripletLib.allocRandomTriple();
             sum += triple.subject().getId() + triple.predicate().getId() + triple.object().getId();
-            freeTriple(triple);
+            TripletLib.freeTriple(triple);
         }
 
         long end = System.currentTimeMillis();
         double timeTaken = ((double) (end - start) * 1_000_000L)/iterations;
 
         System.out.println("Final sum is: " + sum + ", time taken per iteration in nano seconds: " + timeTaken);
-
     }
 }
