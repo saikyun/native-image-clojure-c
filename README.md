@@ -15,19 +15,16 @@ I've only tested on mac.
 
 ## Steps for polyglot
 
-You need libSDL2 on your path and in `:resource-paths` in your `project.clj`.
+You need libSDL2 on your path, and possibly added to `"-Djava.library.path=/usr/local/lib"` in `project.clj`.
 
 ```
-make polyglot # this will also run `lein run`
+make clean polyglot # this will also run `lein run`
 ```
 
 ## Steps for native-image
 
-Modify `src/Headers.java`, specifically: `/Users/test/programmering/clojure/graal-native-interaction/graal/src/triple.h` needs to point to your `src/triple.h`.
-
 ```
-$ make clean CFiles && ./compile && ./woop
-1 # this value comes from a c-struct!
+make clean ni # this compiles using native-image then runs the binary
 ```
 
 ## Acknowledgements
