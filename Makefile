@@ -2,17 +2,17 @@ clean:
 	-rm classes/*
 	-rm *.so
 	-rm woop
+	-rm src/c/*
+	-rm target
 
-JavaFiles:
-	javac -d classes/ src/Headers.java src/Main.java src/TripletLib.java src/Triple.java src/Value.java
+sdl_starter:
+	$(LLVM_TOOLCHAIN)/clang src/sdl_starter.c -lsdl2 -c -emit-llvm
 
-CFiles:
-	clang -shared -o libtriple.so src/triple.cc -Itriple.h
+c/sdl.clj:
+	lein exec -p src/create_sdl_ns.clj
 
-# clang -g -O1 -c -emit-llvm src/triple
-
-NEWC:
-	$(LLVM_TOOLCHAIN)/clang src/wut.c -lsdl2 -c -emit-llvm
+polyglot: sdl_starter c/sdl.clj
+	lein run
 
 ni: JavaFiles CFiles
 	native-image -cp ./classes2 --verbose -Djava.library.path=./classes2 -H:CLibraryPath=. Main

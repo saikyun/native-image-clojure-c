@@ -1,5 +1,6 @@
 (defproject woop "0.0.1"
   :dependencies [[org.clojure/clojure "1.10.1"]]
+  :plugins [[lein-exec "0.3.7"]]
   :source-paths ["src"]
   ;;:java-source-paths ["src"]
   :resource-paths [#_"extra-classes" "classes" "target/classes" "." "/usr/local/lib"]

@@ -128,10 +128,10 @@
                             (print "\n"))))))
 
 (comment
-  (def lib-forms (generate-lib-ns 'c.sdl3 "wut.o" [["int" "SDL_PollEvent"]] {:prefix ["SDL_" "_SDL_"]}))
+  (def lib-forms (generate-lib-ns 'c.sdl3 "sdl_starter.o" [["int" "SDL_PollEvent"]] {:prefix ["SDL_" "_SDL_"]}))
   
   (def lib-forms
-    (load-lib 'c.sdl "src/wut.c" "wut.o"
+    (load-lib 'c.sdl "src/sdl_starter.c" "sdl_starter.o"
               {:prefix ["SDL_" "_SDL_"]
                :kebab true}))  
   
@@ -145,7 +145,7 @@
 
   (spit "flubber.txt" "wat")
   
-  (load-lib 'c.sdl4 "src/wut.c" "wut.o" {:prefix ["SDL_" "_SDL_"]})
+  (load-lib 'c.sdl4 "src/sdl_starter.c" "sdl_starter.o" {:prefix ["SDL_" "_SDL_"]})
   
   (ns-publics 'c.sdl4)
   
