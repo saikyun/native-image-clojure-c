@@ -14,6 +14,9 @@
 I've only tested on mac.
 
 ## Steps for polyglot
+
+You need libSDL2 on your path and in `:resource-paths` in your `project.clj`.
+
 ```
 make polyglot # this will also run `lein run`
 ```
