@@ -1,4 +1,5 @@
-(require '[parse-c :as pc])
+(ns create-sdl-ns
+  (:require [parse-c :as pc]))
 
 (.mkdir (java.io.File. "src/c"))
 

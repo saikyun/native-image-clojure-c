@@ -55,8 +55,10 @@
    (let [lib-sym 'lib #_ (gensym "lib")
          context-f-sym (gensym "context-f")
          source-f-sym (gensym "source-f")]
-     (concat [`(ns ~lib-name)
-              `(def empty-array (object-array 0))]
+     (concat [`(ns ~lib-name
+                 (:import org.graalvm.polyglot.Context
+                          org.graalvm.polyglot.Source))
+              `(def ~'empty-array (object-array 0))]
              (for [l libs]
                `(try
                   (System/loadLibrary ~l)
@@ -89,7 +91,7 @@
                 `[(def ~(with-meta f-sym {:private true}) (.getMember ~lib-sym ~f-name))
                   (defn ~(symbol (snake->kebab pretty-f-name))
                     ([]
-                     (~f ~f-sym empty-array))
+                     (~f ~f-sym ~'empty-array))
                     ([& ~'args]
                      (~f ~f-sym (object-array ~'args))))]))))))
 

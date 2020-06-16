@@ -2,14 +2,14 @@
   (:require [clojure.java.io :as io]
             [parse-c :as pc]
             [clojure.pprint :refer [pp pprint]]
-            #_[sdl-native :as sdl])
+            [sdl-native :as sdl])
   (:gen-class))
 
 (defn -main [& args]
+  (println "lul")
   #_(println (ns-publics 'c.sdl))
-  
-  #_  (c.sdl/beginning)
-  #_(c.sdl/middle)
+  (sdl_native_lib/beginning)
+  (sdl_native_lib/middle)
   #_(loop [quit false]
       (let [poll-res (.asInt (sdl/poll-event (sdl/get-e)))]
         (if (= 0 poll-res)
@@ -19,4 +19,4 @@
             (if quit
               :exit
               (recur quit))))))
-  #_(c.sdl/end))
+  (sdl_native_lib/end))

@@ -536,7 +536,7 @@
   org.graalvm.nativeimage.c.CContext$Directives
   (getHeaderFiles
     [this]
-    ["\"/Users/test/programmering/clojure/graal-native-interaction/graal/src/sdl_starter.h\""]))
+    [(str "\"" (System/getProperty "user.dir") "/src/sdl_starter.h\"")]))
 
 (gen-class2
  :name ^{org.graalvm.nativeimage.c.CContext sdl_native.Headers
@@ -546,5 +546,15 @@
  :methods [^:static ^:native [^{org.graalvm.nativeimage.c.function.CFunction
                                 {:transition org.graalvm.nativeimage.c.function.CFunction$Transition/NO_TRANSITION}}
                               beginning
+                              []
+                              void]
+           ^:static ^:native [^{org.graalvm.nativeimage.c.function.CFunction
+                                {:transition org.graalvm.nativeimage.c.function.CFunction$Transition/NO_TRANSITION}}
+                              middle
+                              []
+                              void]
+           ^:static ^:native [^{org.graalvm.nativeimage.c.function.CFunction
+                                {:transition org.graalvm.nativeimage.c.function.CFunction$Transition/NO_TRANSITION}}
+                              end
                               []
                               void]])
