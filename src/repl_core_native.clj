@@ -1,19 +1,16 @@
-(ns repl-core
+(ns repl-core-native
   (:require [clojure.java.io :as io]
             [parse-c :as pc]
-            [clojure.reflect :refer [reflect]]
             [clojure.pprint :refer [pp pprint]]
-            #_[c.sdl :as sdl])
-  (:import org.graalvm.polyglot.Context
-           org.graalvm.polyglot.Source)
+            #_[sdl-native :as sdl])
   (:gen-class))
 
 (defn -main [& args]
-  (println (ns-publics 'c.sdl))
-  (comment
-    (c.sdl/beginning)
-    (c.sdl/middle)
-    (loop [quit false]
+  #_(println (ns-publics 'c.sdl))
+  
+  #_  (c.sdl/beginning)
+  #_(c.sdl/middle)
+  #_(loop [quit false]
       (let [poll-res (.asInt (sdl/poll-event (sdl/get-e)))]
         (if (= 0 poll-res)
           (recur quit)
@@ -22,4 +19,4 @@
             (if quit
               :exit
               (recur quit))))))
-    (c.sdl/end)))
+  #_(c.sdl/end))

@@ -48,19 +48,6 @@
   (remove-prefix "_SDL_oaeu" ["SDL_" "_SDL_"])
   )
 
-(require '[clojure.java.io])
-(import org.graalvm.polyglot.Context
-        org.graalvm.polyglot.Source)
-(def source (-> (org.graalvm.polyglot.Source/newBuilder "llvm" (clojure.java.io/file "triple.bc"))
-                (.build))) 
-(def context (-> (org.graalvm.polyglot.Context/newBuilder (into-array ["llvm"]))
-                 (.allowIO true)
-                 (.allowNativeAccess true)
-                 (.build)))
-(def lib (.eval context source))
-
-(def empty-array (object-array 0))
-
 (defn generate-lib-ns
   ([lib-name bc-path fns]
    (generate-lib-ns lib-name bc-path fns nil))
@@ -68,7 +55,8 @@
    (let [lib-sym 'lib #_ (gensym "lib")
          context-f-sym (gensym "context-f")
          source-f-sym (gensym "source-f")]
-     (concat [`(ns ~lib-name)]
+     (concat [`(ns ~lib-name)
+              `(def empty-array (object-array 0))]
              (for [l libs]
                `(try
                   (System/loadLibrary ~l)

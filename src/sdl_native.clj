@@ -519,7 +519,7 @@
           [cname bytecode] (generate-class2 options-map)]
       (clojure.lang.Compiler/writeClassFile cname bytecode))))
 
-(ns other-triple
+(ns sdl-native
   (:import org.graalvm.word.PointerBase
            org.graalvm.nativeimage.c.struct.CField
            org.graalvm.nativeimage.c.CContext
@@ -536,93 +536,15 @@
   org.graalvm.nativeimage.c.CContext$Directives
   (getHeaderFiles
     [this]
-    ["\"/Users/test/programmering/clojure/graal-native-interaction/graal/src/triple.h\""]))
-
-(gen-interface
- :name ^{org.graalvm.nativeimage.c.CContext other_triple.Headers
-         org.graalvm.nativeimage.c.function.CLibrary "triple"
-         org.graalvm.nativeimage.c.struct.CStruct "value_t"}
- wat.cool.OOValue
- :extends [org.graalvm.word.PointerBase]
- :methods [[^{org.graalvm.nativeimage.c.struct.CField "id"
-              org.graalvm.nativeimage.c.struct.AllowWideningCast true} getId [] long]])
-
-(gen-interface 
- :name ^{org.graalvm.nativeimage.c.CContext other_triple.Headers
-         org.graalvm.nativeimage.c.function.CLibrary "triple"
-         org.graalvm.nativeimage.c.struct.CStruct "triple_t"}
- wat.cool.OOTriple
- :extends [org.graalvm.word.PointerBase]
- :methods [[^{org.graalvm.nativeimage.c.struct.CFieldAddress "subject"} subject [] wat.cool.OOValue]
-           [^{org.graalvm.nativeimage.c.struct.CFieldAddress "predicate"} predicate [] wat.cool.OOValue]])
+    ["\"/Users/test/programmering/clojure/graal-native-interaction/graal/src/sdl_starter.h\""]))
 
 (gen-class2
- :name ^{org.graalvm.nativeimage.c.CContext other_triple.Headers
-         org.graalvm.nativeimage.c.function.CLibrary "triple"}
- wat.cool.OOTripletLib
+ :name ^{org.graalvm.nativeimage.c.CContext sdl_native.Headers
+         org.graalvm.nativeimage.c.function.CLibrary "sdl_starter"}
+ sdl_native_lib
  
  :methods [^:static ^:native [^{org.graalvm.nativeimage.c.function.CFunction
                                 {:transition org.graalvm.nativeimage.c.function.CFunction$Transition/NO_TRANSITION}}
-                              allocRandomTriple
+                              beginning
                               []
-                              wat.cool.OOTriple]
-           ^:static ^:native [^{org.graalvm.nativeimage.c.function.CFunction
-                                {:transition org.graalvm.nativeimage.c.function.CFunction$Transition/NO_TRANSITION}}
-                              freeTriple
-                              [wat.cool.OOTriple]
                               void]])
-
-(def native-image false)
-
-(when-not native-image
-  (require '[clojure.java.io])
-  (import org.graalvm.polyglot.Context
-          org.graalvm.polyglot.Source)
-  (def source (-> (org.graalvm.polyglot.Source/newBuilder "llvm" (clojure.java.io/file "triple.bc"))
-                  (.build))) 
-  (def context (-> (org.graalvm.polyglot.Context/newBuilder (into-array ["llvm"]))
-                   (.allowIO true)
-                   (.allowNativeAccess true)
-                   (.build)))
-  (def lib (.eval context source)))
-
-(.getBindings context "llvm")
-
-(defn alloc-random-triple
-  []
-  (if native-image
-    (wat.cool.OOTripletLib/allocRandomTriple)
-    (.execute (.getMember lib "allocRandomTriple") (into-array []))))
-
-(defn free-triple
-  [triple]
-  (if native-image
-    (wat.cool.OOTripletLib/freeTriple triple)
-    (.executeVoid (.getMember lib "freeTriple") (into-array [triple]))))
-
-;; (comment
-;;   public class TripletLib {
-;;                            @CEnum("type_t")
-;;                            enum DataType {
-;;                                           I,
-;;                                           F,
-;;                                           S;
-
-;;                                           @CEnumValue
-;;                                           public native int getCValue();
-
-;;                                           @CEnumLookup
-;;                                           public static native DataType fromCValue(int value);
-;;                                           }
-
-;;                            @CFunction(transition = Transition.NO_TRANSITION)
-;;                            public static native OOTriple allocRandomTriple();
-
-;;                            @CFunction(transition = Transition.NO_TRANSITION)
-;;                            public static native void freeTriple(OOTriple triple);
-
-;;                            public static long getThing(OOTriple triple) {
-;;                                                                          return triple.subject().getId();
-;;                                                                          }
-;;                            }
-;;   )

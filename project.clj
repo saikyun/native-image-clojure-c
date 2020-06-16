@@ -3,7 +3,7 @@
   :plugins [[lein-exec "0.3.7"]]
   :source-paths ["src"]
   ;;:java-source-paths ["src"]
-  :resource-paths [#_"extra-classes" "classes" "target/classes" "." "/usr/local/lib"]
+  :resource-paths [#_"extra-classes" "classes" "." "/usr/local/lib"]
   :jvm-opts ["-Dclojure.compiler.direct-linking=true"
              "-Dclojure.spec.skip-macros=true"
              "-XstartOnFirstThread"
@@ -11,11 +11,12 @@
              "-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"
              ]
   :aot :all
-  :main repl-core
-  :aliases {"dumbrepl" ["trampoline" "run" "-m" "clojure.core.server/repl"]}
+  ;; :main repl-core
+  ;; :clean-targets ^{:protect false} ["target"]
+  
   :profiles {:clojure-1.10.2-alpha1 {:dependencies [[org.clojure/clojure "1.10.2-alpha1"]]}
              :uberjar {:global-vars {*assert* false}
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"
                                   "-Dclojure.spec.skip-macros=true"]
-                       :main core
+                       :main repl-core-native
                        :aot :all}})
