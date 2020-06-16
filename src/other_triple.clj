@@ -140,7 +140,7 @@
                  cname nil (iname super)
                  (when-let [ifc (seq interfaces)]
                    (into-array (map iname ifc)))))
-
+    
                                         ; class annotations
     (add-annotations cv name-meta)
     
@@ -553,13 +553,14 @@
          org.graalvm.nativeimage.c.struct.CStruct "triple_t"}
  wat.cool.OOTriple
  :extends [org.graalvm.word.PointerBase]
- :methods [[^{org.graalvm.nativeimage.c.struct.CFieldAddress "subject"} subject [] wat.cool.OOValue]])
+ :methods [[^{org.graalvm.nativeimage.c.struct.CFieldAddress "subject"} subject [] wat.cool.OOValue]
+           [^{org.graalvm.nativeimage.c.struct.CFieldAddress "predicate"} predicate [] wat.cool.OOValue]])
 
 (gen-class2
  :name ^{org.graalvm.nativeimage.c.CContext other_triple.Headers
          org.graalvm.nativeimage.c.function.CLibrary "triple"}
  wat.cool.OOTripletLib
-
+ 
  :methods [^:static ^:native [^{org.graalvm.nativeimage.c.function.CFunction
                                 {:transition org.graalvm.nativeimage.c.function.CFunction$Transition/NO_TRANSITION}}
                               allocRandomTriple
@@ -570,6 +571,34 @@
                               freeTriple
                               [wat.cool.OOTriple]
                               void]])
+
+(def native-image false)
+
+(when-not native-image
+  (require '[clojure.java.io])
+  (import org.graalvm.polyglot.Context
+          org.graalvm.polyglot.Source)
+  (def source (-> (org.graalvm.polyglot.Source/newBuilder "llvm" (clojure.java.io/file "triple.bc"))
+                  (.build))) 
+  (def context (-> (org.graalvm.polyglot.Context/newBuilder (into-array ["llvm"]))
+                   (.allowIO true)
+                   (.allowNativeAccess true)
+                   (.build)))
+  (def lib (.eval context source)))
+
+(.getBindings context "llvm")
+
+(defn alloc-random-triple
+  []
+  (if native-image
+    (wat.cool.OOTripletLib/allocRandomTriple)
+    (.execute (.getMember lib "allocRandomTriple") (into-array []))))
+
+(defn free-triple
+  [triple]
+  (if native-image
+    (wat.cool.OOTripletLib/freeTriple triple)
+    (.executeVoid (.getMember lib "freeTriple") (into-array [triple]))))
 
 ;; (comment
 ;;   public class TripletLib {

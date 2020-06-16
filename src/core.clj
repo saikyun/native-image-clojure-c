@@ -1,12 +1,15 @@
 (ns core
-  (:require [other-triple])
-  #_(:import TripletLib)
+  (:require [other-triple :as w])
   (:import wat.cool.OOTripletLib)
-  
   (:gen-class))
 
+(comment
+  (System/load "/Users/test/programmering/clojure/graal-native-interaction/graal/libtriple.so")
+  
+  )
+
 (defn -main [& args]
-  (println "lul")
   (let [t (OOTripletLib/allocRandomTriple)]
-    (println (.getId (.subject t)))
+    (println "This comes from a c struct:" (.getId (.subject t)))
+    (println "This too:" (.getId (.predicate t)))
     (OOTripletLib/freeTriple t)))
