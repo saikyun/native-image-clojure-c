@@ -15,10 +15,11 @@ I've only tested on mac.
 
 ## Steps for polyglot
 
-You need libSDL2 on your path, and possibly added to `"-Djava.library.path=/usr/local/lib"` in `project.clj`.
+You need libSDL2 on your path, and possibly added to `"-Djava.library.path=<LIB_PATH_HERE>"` in `project.clj`.
 
 ```
-make clean polyglot # this will also run `lein run`
+make clean c/sdl.clj # ignore the error that is thrown, it's just so it stops the process
+make run-p
 ```
 
 ## Steps for native-image
