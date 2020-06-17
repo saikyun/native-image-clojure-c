@@ -76,3 +76,10 @@ SDL_DestroyWindow( window );
  
   SDL_Quit();
 }
+
+int main() {
+  beginning();
+  middle();
+  end();
+  return 0;
+}

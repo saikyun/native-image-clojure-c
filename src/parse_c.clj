@@ -52,8 +52,8 @@
   ([lib-name bc-path fns]
    (generate-lib-ns lib-name bc-path fns nil))
   ([lib-name bc-path fns {:keys [kebab prefix libs] :or [kebab true]}]
-   (let [lib-sym 'lib #_ (gensym "lib")
-         context-f-sym (gensym "context-f")
+   (let [lib-sym 'lib #_ (gensym "lib") 
+         context-f-sym (gensym "context-f") 
          source-f-sym (gensym "source-f")]
      (concat [`(ns ~lib-name
                  (:import org.graalvm.polyglot.Context
