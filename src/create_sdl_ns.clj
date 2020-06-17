@@ -23,7 +23,7 @@
   r->h = h;
   return r;
 }"
-
+                
                 " SDL_Event e;
 SDL_Event *get_e() {
   return &e;
