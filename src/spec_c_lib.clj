@@ -36,6 +36,13 @@
 (def arg-regex (re-pattern arg-s))
 
 (defn parse-args
+  "Takes a string of c function arguments declaration
+  I.e. the code between the parenthesises when declaring a c function.
+
+  ```
+  (parse-args \"int a, char* b\")
+  ;;=> [{:type \"int\", :sym \"a\"} {:type \"char\", :sym \"b\", :pointer \"*\"}]
+  ```"
   [args]
   (when args
     (let [args (str/split args #",")]
@@ -51,10 +58,16 @@
            (into [])))))
 
 (comment
-  (re-find prototype-regex "int SDL_INIT_VIDEO() { return SDL_INIT_VIDEO; }")
+  
   )
 
 (defn parse-c-prototype
+  "Takes a c-prototype and returns prototype data.
+  
+  ```
+  (parse-c-prototype \"int SDL_Init(Uint32 flags)\")
+  ;;=> {:ret \"int\", :sym \"SDL_Init\", :args [{:type \"Uint32\", :sym \"flags\"}]}
+  ```"
   [s]
   (try
     (let [[_ _ type pointers _ f-name args :as res] (re-find prototype-regex s)
@@ -68,7 +81,18 @@
       (println "Failed parsing" (pr-str s))
       (throw e))))
 
+(comment
+  (parse-c-prototype "int SDL_Init(Uint32 flags)")
+  ;;=> {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]}
+  )
+
 (defn generate-shadowing-function
+  "Takes prototype data and generates a c function declaration.
+  
+  ```
+  (generate-shadowing-function {:ret \"int\", :sym \"SDL_Init\", :args [{:type \"Uint32\", :sym \"flags\"}]})
+  ;;=> \"int  _SHADOWING_SDL_Init(Uint32  flags) {\\n  return SDL_Init(flags);\\n}\"
+  ```"
   [{:keys [ret sym pointer args]}]
   (str ret
        " "
@@ -79,7 +103,13 @@
        "  " (when (not= ret "void") "return ") sym "(" (str/join ", " (map :sym args)) ");"
        "\n}"))
 
+(comment
+  (generate-shadowing-function {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]})
+  ;;=> "int  _SHADOWING_SDL_Init(Uint32  flags) {\n  return SDL_Init(flags);\n}"
+  )
+
 (defn snake->kebab
+  "Turns snake casing to kebab-casing -- i.e. how clojure functions look"
   [s]
   (-> s
       (str/replace #"^_" "")
@@ -92,13 +122,44 @@
   (str/replace s (re-pattern (str/join "|" (map #(str "^" %) prefixes))) ""))
 
 (defn gen-clojure-mapping
+  "Takes proto data and creates a pair.
+  The key is a symbol looking like a clojure function name.
+  The value is the proto data.
+  
+  ```  
+  (gen-clojure-mapping {:ret \"int\", :sym \"SDL_Init\", :args [{:type \"Uint32\", :sym \"flags\"}]}
+                       {:prefixes [\"SDL\"]})
+  ;;=> [init {:ret \"int\", :sym \"SDL_Init\", :args [{:type \"Uint32\", :sym \"flags\"}]}]
+  ```
+  "  
+  
   [{:keys [sym] :as f} & [{:keys [prefixes kebab] :or {kebab true}}]]
   [(symbol (cond-> sym
              prefixes (remove-prefixes prefixes)
              kebab snake->kebab))
    f])
 
+(comment
+  (gen-clojure-mapping {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]}
+                       {:prefixes ["SDL"]})
+  ;;=> [init {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]}]
+  )
+
+
+
 (defn gen-defn
+  "Takes kv pair, where k is a clojure symbol and v is proto data.
+  Generates `defn`-calls.
+  Needs `{:lib-sym ...}` as second argument.
+  This should be a symbol declared above the defn-call, which contains a polyglot library.
+  
+  ```
+  (-> (gen-clojure-mapping {:ret \"int\", :sym \"SDL_Init\", :args [{:type \"Uint32\", :sym \"flags\"}]}
+                           {:prefixes [\"SDL\"]})
+      (gen-defn {:lib-sym 'sdl-sym}))
+   [(def init1687 (.getMember sdl-sym \"SDL_Init\"))
+    (clojure.core/defn init ([flags] (.execute init1687 (clojure.core/object-array [flags]))))]
+  ```"
   [[f-sym {:keys [ret sym args]}] {:keys [lib-sym]}]
   (let [f (if (= ret "void")
             '.executeVoid
@@ -111,6 +172,13 @@
              (~f ~f-gensym (object-array ~(into [] as))))
            `([]
              (~f ~f-gensym ~'empty-array))))]))
+
+(comment
+  (-> (gen-clojure-mapping {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]}
+                           {:prefixes ["SDL"]})
+      (gen-defn {:lib-sym 'sdl-sym}))
+  ;;=> [(def init1687 (.getMember sdl-sym "SDL_Init")) (clojure.core/defn init ([flags] (.execute init1687 (clojure.core/object-array [flags]))))]
+  )
 
 (defn lib-boilerplate
   [lib-name {:keys [bc-path libs]}]
@@ -125,12 +193,6 @@
                         (:import org.graalvm.polyglot.Context
                                  org.graalvm.polyglot.Source))
                      `(def ~'empty-array (object-array 0))]
-                    #_(for [l libs]
-                        `(try
-                           (System/loadLibrary ~l)
-                           (catch Error ~'e
-                             (println "ERROR when loading lib" ~l)
-                             (println ~'e))))
                     [`(defn ~context-f-sym
                         []
                         (-> (org.graalvm.polyglot.Context/newBuilder (into-array ["llvm"]))
@@ -166,15 +228,12 @@
 (defn gen-both
   [lib-name {:keys [functions includes protos] :as opts}]
   (let [extra-protos (map parse-c-prototype functions)
-        protos-as-data (map #(if (string? %)
-                               (parse-c-prototype %)
-                               %)
-                            protos)
-        shadows (map generate-shadowing-function protos-as-data)
+        shadows (map generate-shadowing-function protos)
         
         c-file (gen-c-file includes (concat functions shadows))
 
-        protos-as-data-shadowed (map shadow-data protos-as-data)
+        protos-as-data-shadowed (map shadow-data protos)
+
         clojure-lib (gen-lib lib-name (concat
                                        (map gen-clojure-mapping extra-protos)
                                        (map #(gen-clojure-mapping % {:prefixes ["_SHADOWING_SDL"]})
@@ -216,8 +275,8 @@
   Example call:
   (scl/gen-and-persist
   'c.sdl
-  {:protos [\"int SDL_Init(Uint32 flags)\"     ;; c style prototye
-           {:ret \"void\", :sym \"SDL_Quit\"}] ;; prototype as data
+  {:protos [(parse-c-prototype \"int SDL_Init(Uint32 flags)\")     ;; c style prototye
+           {:ret \"void\", :sym \"SDL_Quit\"}]                     ;; prototype as data
   :includes [\"stdio.h\" \"SDL2/SDL.h\"]
   :c-path \"src/generated.c\"
   :bc-path \"libs/generated.bc\"

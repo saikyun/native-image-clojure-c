@@ -1,5 +1,6 @@
 (ns create-sdl-ns
-  (:require [spec-c-lib :as scl]))
+  (:require [spec-c-lib :as scl]
+            [clojure.pprint :refer [pp pprint]]))
 
 (def functions
   ["int GET_SDL_INIT_VIDEO() { return SDL_INIT_VIDEO; }"
@@ -53,8 +54,6 @@ int SDL_FillRect(SDL_Surface*    dst,
                  Uint32          color)
 "
    
-   {:ret "void", :sym "SDL_Quit"} ;; you can also provide prototypes as data
-   
    ])
 
 
@@ -69,18 +68,20 @@ int SDL_FillRect(SDL_Surface*    dst,
   (scl/gen-and-persist
    'c.sdl
    {:functions functions
-    :protos prototypes
+    :protos (concat (map scl/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
+                    [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
+                    )
     :includes ["stdio.h" "SDL2/SDL.h"]
     :c-path "src/generated.c"
     :bc-path "libs/generated.so"
     :clojure-src "src"
     :libs ["SDL2"]})
-
+  
   (println "Done!")
   
   (throw (Error. "Ugly fix -- for some reason it won't quit unless I throw an error.")))
 
 (comment
-  (init)
+  (-main)
   )
 
