@@ -99,14 +99,27 @@
        pointer
        " _SHADOWING_"
        sym
-       "(" (str/join ", " (map (fn [{:keys [type pointer sym]}] (str type " " pointer " " sym)) args)) ") {\n"
-       "  " (when (not= ret "void") "return ") sym "(" (str/join ", " (map :sym args)) ");"
+       "(" (str/join ", " (map (fn [{:keys [type pointer sym prefixes]}]
+                                 (str (str/join " " prefixes) " " type " " pointer " " sym)) args)) ") {\n"
+       "  " (when  (not (and (= ret "void")
+                             (nil? pointer))) "return ") sym "(" (str/join ", " (map :sym args)) ");"
        "\n}"))
 
 (comment
   (generate-shadowing-function {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]})
   ;;=> "int  _SHADOWING_SDL_Init(Uint32  flags) {\n  return SDL_Init(flags);\n}"
   )
+
+(defn generate-c-prototype
+  "Takes prototype data and generates a c function prototype."
+  [{:keys [ret sym pointer args]}]
+  (str ret
+       " "
+       pointer
+       " "
+       sym
+       "(" (str/join ", " (map (fn [{:keys [type pointer sym prefixes]}]
+                                 (str (str/join " " prefixes) " " type " " pointer " " sym)) args)) ");"))
 
 (defn snake->kebab
   "Turns snake casing to kebab-casing -- i.e. how clojure functions look"
@@ -220,32 +233,45 @@
 
 (defn gen-c-file
   [includes fns]
-  (let [incs (apply str (map #(str "#include<" % ">\n") includes))]
+  (let [incs (apply str (map #(str "#include \"" % "\"\n") includes))]
     (str incs
          "\n"
          (str/join "\n" fns))))
+
+(defn gen-h-file
+  [includes fn-declarations]
+  (let [incs (apply str (map #(str "#include <" % ">\n") includes))]
+    (str incs
+         "\n"
+         (str/join "\n" fn-declarations))))
 
 (defn gen-both
   [lib-name {:keys [functions includes protos] :as opts}]
   (let [extra-protos (map parse-c-prototype functions)
         shadows (map generate-shadowing-function protos)
         
-        c-file (gen-c-file includes (concat functions shadows))
-
+        c-file (gen-c-file [(str (:c-name opts) ".h")]
+                           (concat functions shadows))
+        
         protos-as-data-shadowed (map shadow-data protos)
-
+        
+        h-file (gen-h-file includes
+                           (map generate-c-prototype (concat protos-as-data-shadowed extra-protos)))
+        
         clojure-lib (gen-lib lib-name (concat
                                        (map gen-clojure-mapping extra-protos)
                                        (map #(gen-clojure-mapping % {:prefixes ["_SHADOWING_SDL"]})
                                             protos-as-data-shadowed))
                              opts)]
     {:c-code c-file
+     :h-code h-file
      :clojure-lib clojure-lib
      :opts (assoc opts :lib-name lib-name)}))
 
 (defn compile-c
-  [{:keys [c-code opts]}]
+  [{:keys [c-code h-code opts]}]
   (spit (:c-path opts) c-code)
+  (spit (:h-path opts) h-code)
   (let [sh-opts (concat [(str (System/getenv "LLVM_TOOLCHAIN") "/clang") (:c-path opts)]
                         (map #(str "-l" %) (:libs opts))
                         ["-shared" "-fPIC" "-o" (:bc-path opts)])]
@@ -297,8 +323,6 @@
   
   (pprint (parse-c-prototype "void SDL_Quit()"))
   (pprint (parse-c-prototype "int* SDL_Init(Uint32 flags, a * b, c d)"))
-  
-  
   
   (-> (parse-c-prototype "int* SDL_Init(Uint32 flags, a * b, c d)")
       generate-shadowing-function

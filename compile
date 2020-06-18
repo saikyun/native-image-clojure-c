@@ -10,7 +10,7 @@ fi
 lein with-profiles +clojure-1.10.2-alpha1 do clean, uberjar
 
 args=( "-jar" "target/woop-0.0.1-standalone.jar" \
-              "-H:CLibraryPath=." \
+              "-H:CLibraryPath=libs" \
               "-H:Name=woop" \
               "-H:+ReportExceptionStackTraces" \
               "-J-Dclojure.spec.skip-macros=true" \
@@ -20,6 +20,7 @@ args=( "-jar" "target/woop-0.0.1-standalone.jar" \
               "--verbose" \
               "--no-fallback" \
               "--no-server" \
-              "-J-Xmx3g" )
+              # "-J-Xmx3g"
+     )
 
 $GRAALVM_HOME/bin/native-image "${args[@]}"

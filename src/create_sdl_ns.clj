@@ -6,6 +6,9 @@
   ["int GET_SDL_INIT_VIDEO() { return SDL_INIT_VIDEO; }"
    
    "int GET_SDL_WINDOW_SHOWN() { return SDL_WINDOW_SHOWN; }"
+
+   "void* get_null() { return NULL; }"
+   
    "char *gen_title() { return \"SDL Tutorial\"; }"
    
    "
@@ -72,8 +75,10 @@ int SDL_FillRect(SDL_Surface*    dst,
                     [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
                     )
     :includes ["stdio.h" "SDL2/SDL.h"]
+    :c-name "generated"
     :c-path "src/generated.c"
-    :bc-path "libs/generated.so"
+    :h-path "src/generated.h"
+    :bc-path "libs/libgenerated.so"
     :clojure-src "src"
     :libs ["SDL2"]})
   

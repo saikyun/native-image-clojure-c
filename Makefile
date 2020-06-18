@@ -4,7 +4,7 @@ clean:
 	-rm woop
 	-rm src/c/*
 	-rm -r target
-	-rm -r libs
+	-rm libs/*
 
 info:
 	native-image --expert-options-all
@@ -14,6 +14,13 @@ sdl_starter:
 
 sdl_starter_ni:
 	clang -shared -o libsdl_starter.so src/sdl_starter.c -Isdl_starter.h -lSDL2 -fPIC
+
+gen_ni:
+	clang -shared -o libs/libgenerated.so src/generated.c -Isrc/generated.h -lSDL2 -fPIC
+
+gen_ni2:
+	clang -shared -o libs/libmod_gen2.so src/mod_gen2.h -lSDL2 -fPIC
+
 
 c/sdl.clj:
 	lein exec -ep "(require '[create-sdl-ns]) (create-sdl-ns/-main)"
