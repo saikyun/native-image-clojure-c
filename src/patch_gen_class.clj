@@ -1,19 +1,20 @@
-(ns patch-gen-class)
-
-(in-ns 'clojure.core)
+(ns patch-gen-class
+  (:import [clojure.asm Opcodes Type]
+           java.lang.reflect.Modifier
+           [clojure.asm.commons Method GeneratorAdapter]))
 
 (defn- generate-class-native [options-map]
-  (validate-generate-class-options options-map)
+  (@#'clojure.core/validate-generate-class-options options-map)
   (let [default-options {:prefix "-" :load-impl-ns true :impl-ns (ns-name *ns*)}
         {:keys [name extends implements constructors methods main factory state init exposes 
                 exposes-methods prefix load-impl-ns impl-ns post-init]} 
         (merge default-options options-map)
         name-meta (meta name)
         name (str name)
-        super (if extends (the-class extends) Object)
-        interfaces (map the-class implements)
+        super (if extends (@#'clojure.core/the-class extends) Object)
+        interfaces (map @#'clojure.core/the-class implements)
         supers (cons super interfaces)
-        ctor-sig-map (or constructors (zipmap (ctor-sigs super) (ctor-sigs super)))
+        ctor-sig-map (or constructors (zipmap (@#'clojure.core/ctor-sigs super) (@#'clojure.core/ctor-sigs super)))
         cv (clojure.lang.Compiler/classWriter)
         cname (. name (replace "." "/"))
         pkg-name name
@@ -27,7 +28,7 @@
                             (make-array Type 0)))
         obj-type ^Type (totype Object)
         arg-types (fn [n] (if (pos? n)
-                            (into-array (replicate n obj-type))
+                            (into-array (@#'clojure.core/replicate n obj-type))
                             (make-array Type 0)))
         super-type ^Type (totype super)
         init-name (str init)
@@ -43,16 +44,16 @@
         iseq-type (totype clojure.lang.ISeq)
         ex-type  (totype java.lang.UnsupportedOperationException)
         util-type (totype clojure.lang.Util)
-        all-sigs (distinct (concat (map #(let[[m p] (key %)] {m [p]}) (mapcat non-private-methods supers))
+        all-sigs (distinct (concat (map #(let[[m p] (key %)] {m [p]}) (mapcat @#'clojure.core/non-private-methods supers))
                                    (map (fn [[m p]] {(str m) [p]}) methods)))
         sigs-by-name (apply merge-with concat {} all-sigs)
-        overloads (into1 {} (filter (fn [[m s]] (next s)) sigs-by-name))
+        overloads (@#'clojure.core/into1 {} (filter (fn [[m s]] (next s)) sigs-by-name))
         var-fields (concat (when init [init-name]) 
                            (when post-init [post-init-name])
                            (when main [main-name])
                                         ;(when exposes-methods (map str (vals exposes-methods)))
                            (distinct (concat (keys sigs-by-name)
-                                             (mapcat (fn [[m s]] (map #(overload-name m (map the-class %)) s)) overloads)
+                                             (mapcat (fn [[m s]] (map #(@#'clojure.core/overload-name m (map @#'clojure.core/the-class %)) s)) overloads)
                                              (mapcat (comp (partial map str) vals val) exposes))))
         emit-get-var (fn [^GeneratorAdapter gen v]
                        (let [false-label (. gen newLabel)
@@ -75,8 +76,8 @@
         (fn [name pclasses rclass as-static as-native else-gen]
           (let [mname (str name)
                 pmetas (map meta pclasses)
-                pclasses (map the-class pclasses)
-                rclass (the-class rclass)
+                pclasses (map @#'clojure.core/the-class pclasses)
+                rclass (@#'clojure.core/the-class rclass)
                 ptypes (to-types pclasses)
                 rtype ^Type (totype rclass)
                 m (new Method mname rtype ptypes)
@@ -88,16 +89,16 @@
                 found-label (. gen (newLabel))
                 else-label (. gen (newLabel))
                 end-label (. gen (newLabel))]
-            (add-annotations gen (meta name))
+            (@#'clojure.core/add-annotations gen (meta name))
             (dotimes [i (count pmetas)]
-              (add-annotations gen (nth pmetas i) i))
+              (@#'clojure.core/add-annotations gen (nth pmetas i) i))
             (when-not as-native
               (. gen (visitCode))
               (if (> (count pclasses) 18)
                 (else-gen gen m)
                 (do
                   (when is-overload
-                    (emit-get-var gen (overload-name mname pclasses))
+                    (emit-get-var gen (@#'clojure.core/overload-name mname pclasses))
                     (. gen (dup))
                     (. gen (ifNonNull found-label))
                     (. gen (pop)))
@@ -116,9 +117,9 @@
                     (. clojure.lang.Compiler$HostExpr (emitBoxReturn nil gen (nth pclasses i))))
                                         ;call fn
                   (. gen (invokeInterface ifn-type (new Method "invoke" obj-type
-                                                        (to-types (replicate (+ (count ptypes)
-                                                                                (if as-static 0 1))
-                                                                             Object)))))
+                                                        (to-types (@#'clojure.core/replicate (+ (count ptypes)
+                                                                                                (if as-static 0 1))
+                                                                   Object)))))
                                         ;(into-array (cons obj-type
                                         ;                 (replicate (count ptypes) obj-type))))))
                                         ;unbox return
@@ -126,13 +127,13 @@
                   (when (= (. rtype (getSort)) (. Type VOID))
                     (. gen (pop)))
                   (. gen (goTo end-label))
-
+                  
                                         ;else call supplied alternative generator
                   (. gen (mark else-label))
                   (. gen (pop))
-
+                  
                   (else-gen gen m)
-
+                  
                   (. gen (mark end-label))))
               (. gen (returnValue)))
             (. gen (endMethod))))
@@ -144,7 +145,7 @@
                    (into-array (map iname ifc)))))
     
                                         ; class annotations
-    (add-annotations cv name-meta)
+    (@#'clojure.core/add-annotations cv name-meta)
     
                                         ;static fields for vars
     (doseq [v var-fields]
@@ -178,21 +179,21 @@
                                         ;        (. gen push (str (.replace impl-pkg-name \- \_) "__init"))
                                         ;        (. gen (invokeStatic class-type (. Method (getMethod "Class forName(String)"))))
         (. gen pop))
-
+      
       (. gen (returnValue))
       (. gen (endMethod)))
     
                                         ;ctors
     (doseq [[pclasses super-pclasses] ctor-sig-map]
       (let [constructor-annotations (meta pclasses)
-            pclasses (map the-class pclasses)
-            super-pclasses (map the-class super-pclasses)
+            pclasses (map @#'clojure.core/the-class pclasses)
+            super-pclasses (map @#'clojure.core/the-class super-pclasses)
             ptypes (to-types pclasses)
             super-ptypes (to-types super-pclasses)
             m (new Method "<init>" (. Type VOID_TYPE) ptypes)
             super-m (new Method "<init>" (. Type VOID_TYPE) super-ptypes)
             gen (new GeneratorAdapter (. Opcodes ACC_PUBLIC) m nil nil cv)
-            _ (add-annotations gen constructor-annotations)
+            _ (@#'clojure.core/add-annotations gen constructor-annotations)
             no-init-label (. gen newLabel)
             end-label (. gen newLabel)
             no-post-init-label (. gen newLabel)
@@ -267,7 +268,7 @@
           (. gen mark no-post-init-label)
           (. gen (throwException ex-type (str impl-pkg-name "/" prefix post-init-name " not defined")))
           (. gen mark end-post-init-label))
-
+        
         (. gen (returnValue))
         (. gen (endMethod))
                                         ;factory
@@ -284,7 +285,7 @@
             (. gen (endMethod))))))
     
                                         ;add methods matching supers', if no fn -> call super
-    (let [mm (non-private-methods super)]
+    (let [mm (@#'clojure.core/non-private-methods super)]
       (doseq [^java.lang.reflect.Method meth (vals mm)]
         (emit-forwarding-method (.getName meth) (.getParameterTypes meth) (.getReturnType meth) false false
                                 (fn [^GeneratorAdapter gen ^Method m]
@@ -297,24 +298,24 @@
                                                           (. m (getName))
                                                           (. m (getDescriptor)))))))
                                         ;add methods matching interfaces', if no fn -> throw
-      (reduce1 (fn [mm ^java.lang.reflect.Method meth]
-                 (if (contains? mm (method-sig meth))
-                   mm
-                   (do
-                     (emit-forwarding-method (.getName meth) (.getParameterTypes meth) (.getReturnType meth) false false
-                                             emit-unsupported)
-                     (assoc mm (method-sig meth) meth))))
-               mm (mapcat #(.getMethods ^Class %) interfaces))
+      (@#'clojure.core/reduce1 (fn [mm ^java.lang.reflect.Method meth]
+                                 (if (contains? mm (method-sig meth))
+                                   mm
+                                   (do
+                                     (emit-forwarding-method (.getName meth) (.getParameterTypes meth) (.getReturnType meth) false false
+                                                             emit-unsupported)
+                                     (assoc mm (method-sig meth) meth))))
+       mm (mapcat #(.getMethods ^Class %) interfaces))
                                         ;extra methods
       (doseq [[mname pclasses rclass :as msig] methods]
         (emit-forwarding-method mname pclasses rclass (:static (meta msig)) (:native (meta msig))
                                 emit-unsupported))
                                         ;expose specified overridden superclass methods
-      (doseq [[local-mname ^java.lang.reflect.Method m] (reduce1 (fn [ms [[name _ _] m]]
-                                                                   (if (contains? exposes-methods (symbol name))
-                                                                     (conj ms [((symbol name) exposes-methods) m])
-                                                                     ms)) [] (concat (seq mm)
-                                                                                     (seq (protected-final-methods super))))]
+      (doseq [[local-mname ^java.lang.reflect.Method m] (@#'clojure.core/reduce1 (fn [ms [[name _ _] m]]
+                                                                                   (if (contains? exposes-methods (symbol name))
+                                                                                     (conj ms [((symbol name) exposes-methods) m])
+                                                                                     ms)) [] (concat (seq mm)
+                                                                                                     (seq (@#'clojure.core/protected-final-methods super))))]
         (let [ptypes (to-types (.getParameterTypes m))
               rtype (totype (.getReturnType m))
               exposer-m (new Method (str local-mname) rtype ptypes)
@@ -336,7 +337,7 @@
             no-main-label (. gen newLabel)
             end-label (. gen newLabel)]
         (. gen (visitCode))
-
+        
         (emit-get-var gen main-name)
         (. gen dup)
         (. gen ifNull no-main-label)
@@ -355,7 +356,7 @@
         (. gen (endMethod))))
                                         ;field exposers
     (doseq [[f {getter :get setter :set}] exposes]
-      (let [fld (find-field super (str f))
+      (let [fld (@#'clojure.core/find-field super (str f))
             ftype (totype (.getType fld))
             static? (Modifier/isStatic (.getModifiers fld))
             acc (+ Opcodes/ACC_PUBLIC (if static? Opcodes/ACC_STATIC 0))]
@@ -503,10 +504,10 @@
   prefixFoo in the implementing ns.
 
   :impl-ns name
-
+  
   Default: the name of the current ns. Implementations of methods will be 
   looked up in this namespace.
-
+  
   :load-impl-ns boolean
   
   Default: true. Causes the static initializer for the generated class
@@ -517,9 +518,6 @@
   
   [& options]
   (when *compile-files*
-    (let [options-map (into1 {} (map vec (partition 2 options)))
+    (let [options-map (@#'clojure.core/into1 {} (map vec (partition 2 options)))
           [cname bytecode] (generate-class-native options-map)]
       (clojure.lang.Compiler/writeClassFile cname bytecode))))
-
-
-(in-ns 'patch-gen-class)
