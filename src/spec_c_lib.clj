@@ -125,12 +125,12 @@
                         (:import org.graalvm.polyglot.Context
                                  org.graalvm.polyglot.Source))
                      `(def ~'empty-array (object-array 0))]
-                    (for [l libs]
-                      `(try
-                         (System/loadLibrary ~l)
-                         (catch Error ~'e
-                           (println "ERROR when loading lib" ~l)
-                           (println ~'e))))
+                    #_(for [l libs]
+                        `(try
+                           (System/loadLibrary ~l)
+                           (catch Error ~'e
+                             (println "ERROR when loading lib" ~l)
+                             (println ~'e))))
                     [`(defn ~context-f-sym
                         []
                         (-> (org.graalvm.polyglot.Context/newBuilder (into-array ["llvm"]))
