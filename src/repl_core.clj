@@ -9,7 +9,7 @@
   (println (ns-publics 'c.sdl))
   
   (sdl/init (sdl/get-sdl-init-video))
-
+  
   (let [window (sdl/create-window (sdl/gen-title)
                                   0
                                   0
@@ -22,8 +22,6 @@
     (sdl/fill-rect screen rect (sdl/map-rgb (.getMember screen "format") 0xFF 0 0))
     
     (sdl/update-window-surface window))
-  
-  
   
   (println "SDL inited")
   

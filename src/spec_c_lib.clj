@@ -189,7 +189,7 @@
   (spit (:c-path opts) c-code)
   (let [sh-opts (concat [(str (System/getenv "LLVM_TOOLCHAIN") "/clang") (:c-path opts)]
                         (map #(str "-l" %) (:libs opts))
-                        ["-c" "-emit-llvm" "-o" (:bc-path opts)])]
+                        ["-shared" "-fPIC" "-o" (:bc-path opts)])]
     (apply sh sh-opts)))
 
 (defn persist-c

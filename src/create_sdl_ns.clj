@@ -72,7 +72,7 @@ int SDL_FillRect(SDL_Surface*    dst,
     :protos prototypes
     :includes ["stdio.h" "SDL2/SDL.h"]
     :c-path "src/generated.c"
-    :bc-path "libs/generated.bc"
+    :bc-path "libs/generated.so"
     :clojure-src "src"
     :libs ["SDL2"]})
 
