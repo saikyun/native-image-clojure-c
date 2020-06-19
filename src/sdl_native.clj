@@ -16,38 +16,7 @@
            [org.graalvm.nativeimage.c.type CCharPointer VoidPointer])  
   (:gen-class))
 
-(require 'gen_sdl_native_lib)
-
-(gen-interface 
- :name ^{org.graalvm.nativeimage.c.CContext gen_sdl_native_lib.Headers
-         org.graalvm.nativeimage.c.function.CLibrary "generated"
-         org.graalvm.nativeimage.c.struct.CStruct "SDL_Event"}
- sdl_native.SDL_Event
- :extends [org.graalvm.word.PointerBase]
- :methods [[^{org.graalvm.nativeimage.c.struct.CField "type"}
-            type []
-            int]])
-
-(gen-interface 
- :name ^{org.graalvm.nativeimage.c.CContext gen_sdl_native_lib.Headers
-         org.graalvm.nativeimage.c.function.CLibrary "generated"
-         org.graalvm.nativeimage.c.struct.CStruct "SDL_PixelFormat"}
- sdl_native.SDL_PixelFormat
- :extends [org.graalvm.word.PointerBase]
- :methods [[^{org.graalvm.nativeimage.c.struct.CField "palette"}
-            palette []
-            org.graalvm.nativeimage.c.type.VoidPointer]])
-
-(gen-interface 
- :name ^{org.graalvm.nativeimage.c.CContext gen_sdl_native_lib.Headers
-         org.graalvm.nativeimage.c.function.CLibrary "generated"
-         org.graalvm.nativeimage.c.struct.CStruct "SDL_Surface"}
- sdl_native.SDL_Surface
- :extends [org.graalvm.word.PointerBase]
- :methods [[^{org.graalvm.nativeimage.c.struct.CField "format"}
-            format
-            []
-            sdl_native.SDL_PixelFormat]])
+#_(require 'gen_sdl_native_lib)
 
 #_(def types
     {"void" 'void

@@ -3,6 +3,8 @@
             [parse-c :as pc]
             [clojure.string :as str]
             
+            [gen-clj.native-image :as ni]
+            
             [clojure.pprint :refer [pp pprint]]))
 
 (def functions
@@ -62,29 +64,73 @@ int SDL_FillRect(SDL_Surface*    dst,
    
    ])
 
+(def types
+  {"void" {"*" 'org.graalvm.nativeimage.c.type.VoidPointer
+           nil 'void}
+   "int" 'int
+   "char" {"*" 'org.graalvm.nativeimage.c.type.CCharPointer
+           nil 'char}
+   "Uint32" 'int
+   "Uint8" 'int
+   "SDL_Surface" 'bindings.sdl_ni.SDL_Surface
+   "SDL_Rect" 'org.graalvm.nativeimage.c.type.VoidPointer
+   "SDL_Event" 'bindings.sdl_ni.SDL_Event
+   "SDL_Window" 'org.graalvm.nativeimage.c.type.VoidPointer
+   "SDL_PixelFormat" 'bindings.sdl_ni.SDL_PixelFormat})
+
+(def interfaces [`(gen-interface 
+                   :name ~(with-meta 'bindings.sdl_ni.SDL_Event
+                            {org.graalvm.nativeimage.c.CContext 'bindings.sdl_ni.Headers
+                             org.graalvm.nativeimage.c.function.CLibrary "bindings$sdl"
+                             org.graalvm.nativeimage.c.struct.CStruct "SDL_Event"})
+                   :extends [org.graalvm.word.PointerBase]
+                   :methods [[~(with-meta 'type
+                                 {org.graalvm.nativeimage.c.struct.CField "type"}) []
+                              ~'int]])
+                 
+                 `(gen-interface 
+                   :name ~(with-meta 'bindings.sdl_ni.SDL_PixelFormat
+                            {org.graalvm.nativeimage.c.CContext 'bindings.sdl_ni.Headers
+                             org.graalvm.nativeimage.c.function.CLibrary "bindings$sdl"
+                             org.graalvm.nativeimage.c.struct.CStruct "SDL_PixelFormat"})
+                   :extends [org.graalvm.word.PointerBase]
+                   :methods [[~(with-meta 'palette
+                                 {org.graalvm.nativeimage.c.struct.CField "palette"}) []
+                              ~'org.graalvm.nativeimage.c.type.VoidPointer]])
+                 
+                 `(gen-interface 
+                   :name ~(with-meta 'bindings.sdl_ni.SDL_Surface
+                            {org.graalvm.nativeimage.c.CContext 'bindings.sdl_ni.Headers
+                             org.graalvm.nativeimage.c.function.CLibrary "bindings$sdl"
+                             org.graalvm.nativeimage.c.struct.CStruct "SDL_Surface"})
+                   :extends [org.graalvm.word.PointerBase]
+                   :methods [[~(with-meta 'format
+                                 {org.graalvm.nativeimage.c.struct.CField "format"})
+                              []
+                              ~'bindings.sdl_ni.SDL_PixelFormat]])])
 
 (defn -main
   []
-  (println "Creating src/c")
-  (.mkdir (java.io.File. "src/c"))
   (println "Creating libs")
   (.mkdir (java.io.File. "libs"))
   
-  (println "Generating c.sdl")
-  (scl/gen-and-persist
-   'c.sdl
-   {:inline-c (str/join "\n" functions)
-    :protos (concat (map pc/parse-c-prototype functions)
-                    (map pc/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
-                    [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
-                    )
-    :includes ["stdio.h" "SDL2/SDL.h"]
-    :c-name "generated"
-    :c-path "src/generated.c"
-    :h-path "src/generated.h"
-    :bc-path "libs/libgenerated.so"
-    :clojure-src "src"
-    :libs ["SDL2"]})
+  (println "Generating bindings.sdl")
+  (let [opts (scl/gen-and-persist
+              {:inline-c (str/join "\n" functions)
+               :protos (concat (map pc/parse-c-prototype functions)
+                               (map pc/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
+                               [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
+                               )
+               :includes ["stdio.h" "SDL2/SDL.h"]
+               :append-ni interfaces
+               :types types
+               :lib-name 'bindings.sdl
+               :src-dir "src"
+               :lib-dir "libs"
+               :libs ["SDL2"]})
+        opts (assoc opts :ni-code (ni/gen-lib opts))]
+    (ni/persist-clj opts)
+    opts)
   
   (println "Done!")
   

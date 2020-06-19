@@ -5,8 +5,7 @@
   :jvm-opts ["-Dclojure.compiler.direct-linking=true"
              "-Dclojure.spec.skip-macros=true"
              "-XstartOnFirstThread"
-             "-Djava.library.path=/usr/local/lib"
-             ]
+             "-Djava.library.path=/usr/local/lib"]
   :resources ["src" "libs"]
   
   :profiles {:socket {:jvm-opts ["-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}

@@ -1,5 +1,6 @@
 (ns gen-clj.polyglot
-  (:require [gen-clj :refer [gen-clojure-mapping]]))
+  (:require [gen-clj :refer [gen-clojure-mapping]]
+            [gen-c :refer [get-so-path]]))
 
 (defn gen-defn
   "Takes kv pair, where k is a clojure symbol and v is proto data.
@@ -35,12 +36,12 @@
   )
 
 (defn lib-boilerplate
-  [lib-name {:keys [bc-path libs]}]
+  [lib-name {:keys [libs] :as opts}]
   (let [lib-sym (gensym (str "lib"))
         context-f-sym (gensym "context-f") 
-        source-f-sym (gensym "source-f")]
+        source-f-sym (gensym "source-f")
+        so-path (get-so-path opts)]
     {:lib-name lib-name
-     :bc-path bc-path
      :libs libs
      :lib-sym lib-sym
      :forms (concat [`(ns ~lib-name
@@ -56,9 +57,9 @@
                             (.build)))
                      `(defn ~source-f-sym
                         []
-                        (-> (org.graalvm.polyglot.Source/newBuilder "llvm" (if (string? ~bc-path)
-                                                                             (clojure.java.io/file ~bc-path)
-                                                                             ~bc-path))
+                        (-> (org.graalvm.polyglot.Source/newBuilder "llvm" (if (string? ~so-path)
+                                                                             (clojure.java.io/file ~so-path)
+                                                                             ~so-path))
                             (.build)))
                      `(def ~lib-sym (.eval (~context-f-sym) (~source-f-sym)))])}))
 

@@ -2,11 +2,9 @@
   (:require [clojure.java.io :as io]
             [clojure.reflect :refer [reflect]]
             [clojure.pprint :refer [pp pprint]]
-            [c.sdl :as sdl]))
+            [bindings.sdl :as sdl]))
 
 (defn -main [& args]
-  (println (ns-publics 'c.sdl))
-  
   (sdl/init (sdl/get-sdl-init-video))
   
   (let [window (sdl/create-window (sdl/gen-title)
@@ -33,17 +31,4 @@
         (recur quit))))
   
   (sdl/quit)
-  (println "Quit SDL")
-  
-  #_(sdl/beginning)
-  #_(sdl/middle)
-  #_(loop [quit false]
-      (let [poll-res (.asInt (sdl/poll-event (sdl/get-e)))]
-        (if (= 0 poll-res)
-          (recur quit)
-          (let [ev (.getMember (c.sdl/get-e) "type")
-                quit (= (.asInt ev) 256)]
-            (if quit
-              :exit
-              (recur quit))))))
-  #_(sdl/end))
+  (println "Quit SDL"))

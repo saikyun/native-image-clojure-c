@@ -39,7 +39,7 @@
       (->> args
            (map #(let [[_ prefix type pointers _ sym] (re-find arg-regex %)
                        prefixes (when prefix (str/split prefix #" "))
-                       pointer (when-let [s (seq (str/trim pointers))] (apply str s))]
+                       pointer (when-let [s (seq (str/replace pointers " " ""))] (apply str s))]
                    (cond->
                        {:type type
                         :sym sym}

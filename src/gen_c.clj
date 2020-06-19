@@ -1,5 +1,28 @@
 (ns gen-c
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.java.shell :refer [sh]]))
+
+(defn snake-case
+  [s]
+  (-> s
+      (str/replace "-" "_")
+      (str/replace "." "/")))
+
+(defn no-subdir
+  [s]
+  (snake-case (str/replace s "." "$")))
+
+(defn get-c-path
+  [{:keys [src-dir lib-name]}]
+  (str src-dir "/" (snake-case lib-name) ".c"))
+
+(defn get-h-path
+  [{:keys [src-dir lib-name]}]
+  (str src-dir "/" (snake-case lib-name) ".h"))
+
+(defn get-so-path
+  [{:keys [lib-dir lib-name]}]
+  (str lib-dir "/lib" (no-subdir lib-name) ".so"))
 
 (defn generate-shadowing-function
   "Takes prototype data and generates a c function declaration.
@@ -57,4 +80,23 @@
     (str incs
          "\n\n"
          (str/join "\n" fn-declarations))))
+
+(defn compile-c
+  [{:keys [c-code h-code libs] :as opts}]
+  (let [c-path (get-c-path opts)
+        h-path (get-h-path opts)]
+    (spit c-path c-code)
+    (spit h-path h-code)
+    (let [sh-opts (concat [(str (System/getenv "LLVM_TOOLCHAIN") "/clang") c-path]
+                          (map #(str "-l" %) libs)
+                          ["-shared" "-fPIC" "-o" (get-so-path opts)])]
+      (apply sh sh-opts))))
+
+(defn persist-c
+  [res]
+  (let [{:keys [err]} (compile-c res)]
+    (when (seq err) 
+      (println "ERROR:" err)
+      (println "Compilation failed:" res)
+      (throw (Error. err)))))
 
