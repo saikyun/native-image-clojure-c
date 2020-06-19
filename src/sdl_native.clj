@@ -1,5 +1,5 @@
 (ns sdl-native
-  (:require [patch-gen-class])
+  (:require [patch-gen-class :as pgc])
   (:import org.graalvm.word.PointerBase
            org.graalvm.nativeimage.c.struct.CField
            org.graalvm.nativeimage.c.CContext
@@ -13,9 +13,6 @@
            
            [org.graalvm.nativeimage.c.type CCharPointer VoidPointer])
   (:gen-class))
-
-
-
 
 (deftype Headers
     []
@@ -55,8 +52,7 @@
             []
             sdl_native.SDL_PixelFormat]])
 
-
-(gen-class-native
+(pgc/gen-class-native
  :name ^{org.graalvm.nativeimage.c.CContext sdl_native.Headers
          org.graalvm.nativeimage.c.function.CLibrary "generated"}
  sdl_native_lib

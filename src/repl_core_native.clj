@@ -1,6 +1,5 @@
 (ns repl-core-native
   (:require [clojure.java.io :as io]
-            [parse-c :as pc]
             [clojure.pprint :refer [pp pprint]]
             [sdl-native :as sdl])
   (:gen-class))

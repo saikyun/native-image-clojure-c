@@ -1,6 +1,5 @@
 (ns repl-core
   (:require [clojure.java.io :as io]
-            [parse-c :as pc]
             [clojure.reflect :refer [reflect]]
             [clojure.pprint :refer [pp pprint]]
             [c.sdl :as sdl]))

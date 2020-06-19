@@ -1,12 +1,15 @@
 (ns create-sdl-ns
   (:require [spec-c-lib :as scl]
+            [parse-c :as pc]
+            [clojure.string :as str]
+            
             [clojure.pprint :refer [pp pprint]]))
 
 (def functions
   ["int GET_SDL_INIT_VIDEO() { return SDL_INIT_VIDEO; }"
    
    "int GET_SDL_WINDOW_SHOWN() { return SDL_WINDOW_SHOWN; }"
-
+   
    "void* get_null() { return NULL; }"
    
    "char *gen_title() { return \"SDL Tutorial\"; }"
@@ -70,8 +73,9 @@ int SDL_FillRect(SDL_Surface*    dst,
   (println "Generating c.sdl")
   (scl/gen-and-persist
    'c.sdl
-   {:functions functions
-    :protos (concat (map scl/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
+   {:inline-c (str/join "\n" functions)
+    :protos (concat (map pc/parse-c-prototype functions)
+                    (map pc/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
                     [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
                     )
     :includes ["stdio.h" "SDL2/SDL.h"]

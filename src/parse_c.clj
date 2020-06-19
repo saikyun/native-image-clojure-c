@@ -1,142 +1,77 @@
 (ns parse-c
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.pprint :refer [pp pprint]]))
+  (:require [clojure.string :as str]))
 
-(def func-regex #"(^|;)\s*(\w+)(\s+\*?|\*\s+|\s+\*\s+)(\w+)\s*\([^)]*\)\s*\{")
+(def arg-s (str "\\s*"
+                "(const\\s*)*" ;; prefixes
+                "\\s*"
+                "(\\w+)"       ;; type
+                "((\\*|\\s)+)" ;; space / pointer stars
+                "(\\w+)"       ;; symbol
+                "\\s*"))
 
-(defn funcs-in-file
-  [file]
-  (for [line (-> (if (string? file) (io/file file) file)
-                 slurp
-                 str/split-lines)
-        :let [res (re-matches func-regex line)]
-        :when res]
-    [(get res 2) (last res)]))
+(def prototype-regex
+  (re-pattern (str "(;|^)\\s*"     ;; whitespace
+                   "(\\w+)"        ;; return type
+                   "((\\*|\\s)+)"  ;; space / pointer stars
+                   "(\\w+)"        ;; function name
+                   "\\(*"          ;; beginning of args
+                   "("
+                   ,    arg-s      ;; first arg
+                   "(," arg-s ")*" ;; more args
+                   ")?"
+                   "\\s*\\)"       ;; end of args
+                   "\\s*(\\{|;|$)" ;; braces and stuff
+                   )))
 
-(defn funcs-in-dir
-  [dir]
-  (->> (filter #(re-matches #".*(\.h|\.c|\.cc)$" (.getName %)) (file-seq (if (string? dir) (io/file dir) dir)))
-       (map funcs-in-file)
-       flatten))
+(def arg-regex (re-pattern arg-s))
+
+(defn parse-args
+  "Takes a string of c function arguments declaration
+  I.e. the code between the parenthesises when declaring a c function.
+
+  ```
+  (parse-args \"int a, char* b\")
+  ;;=> [{:type \"int\", :sym \"a\"} {:type \"char\", :sym \"b\", :pointer \"*\"}]
+  ```"
+  [args]
+  (when args
+    (let [args (str/split args #",")]
+      (->> args
+           (map #(let [[_ prefix type pointers _ sym] (re-find arg-regex %)
+                       prefixes (when prefix (str/split prefix #" "))
+                       pointer (when-let [s (seq (str/trim pointers))] (apply str s))]
+                   (cond->
+                       {:type type
+                        :sym sym}
+                     prefix (merge {:prefixes prefixes})
+                     pointer (merge {:pointer pointer}))))
+           (into [])))))
 
 (comment
-  (pprint
-   (map
-    #(str "#include \"" % "\";")
-    (map #(.getAbsolutePath %) (file-seq (io/file "/Users/test/programmering/SDL2-2.0.12/src/")))))
+  
   )
 
-(defn snake->kebab
+(defn parse-c-prototype
+  "Takes a c-prototype and returns prototype data.
+  
+  ```
+  (parse-c-prototype \"int SDL_Init(Uint32 flags)\")
+  ;;=> {:ret \"int\", :sym \"SDL_Init\", :args [{:type \"Uint32\", :sym \"flags\"}]}
+  ```"
   [s]
-  (-> s
-      (str/replace #"^_" "")
-      (str/replace #"(?!^)_" "-")
-      (str/replace #"(?!^)([a-z][A-Z])" #(str (apply str (butlast (first %1))) "-" (second (second %1))))
-      str/lower-case))
-
-(defn remove-prefix
-  [s prefixes]
-  (str/replace s (re-pattern (str/join "|" (map #(str "^" %) prefixes))) ""))
-
-(comment
-  (str/join "aoeu" ["," "cr"])
-  
-  (snake->kebab "aoeuAeoua")
-  (snake->kebab "_SDL_PollEvent")
-  (snake->kebab "aoeuAEoua")
-  (remove-prefix "_SDL_oaeu" ["SDL_" "_SDL_"])
-  )
-
-(defn generate-lib-ns
-  ([lib-name bc-path fns]
-   (generate-lib-ns lib-name bc-path fns nil))
-  ([lib-name bc-path fns {:keys [kebab prefix libs] :or [kebab true]}]
-   (let [lib-sym 'lib #_ (gensym "lib") 
-         context-f-sym (gensym "context-f") 
-         source-f-sym (gensym "source-f")]
-     (concat [`(ns ~lib-name
-                 (:import org.graalvm.polyglot.Context
-                          org.graalvm.polyglot.Source))
-              `(def ~'empty-array (object-array 0))]
-             (for [l libs]
-               `(try
-                  (System/loadLibrary ~l)
-                  (catch Error ~'e
-                    (println "ERROR when loading lib" ~l)
-                    (println ~'e))))
-             [`(defn ~context-f-sym
-                 []
-                 (-> (org.graalvm.polyglot.Context/newBuilder (into-array ["llvm"]))
-                     (.allowIO true)
-                     (.allowNativeAccess true)
-                     (.build)))
-              `(defn ~source-f-sym
-                 []
-                 (-> (org.graalvm.polyglot.Source/newBuilder "llvm" (if (string? ~bc-path)
-                                                                      (io/file ~bc-path)
-                                                                      ~bc-path))
-                     (.build)))
-              `(def ~lib-sym (.eval (~context-f-sym) (~source-f-sym)))]
-             (apply 
-              concat
-              (for [[signature f-name] fns
-                    :let [f (if (= signature "void")
-                              '.executeVoid
-                              '.execute)
-                          f-sym (gensym f-name)
-                          pretty-f-name (cond-> f-name
-                                          prefix (remove-prefix prefix)
-                                          kebab snake->kebab)]]
-                `[(def ~(with-meta f-sym {:private true}) (.getMember ~lib-sym ~f-name))
-                  (defn ~(symbol (snake->kebab pretty-f-name))
-                    ([]
-                     (~f ~f-sym ~'empty-array))
-                    ([& ~'args]
-                     (~f ~f-sym (object-array ~'args))))]))))))
-
-(defn load-lib
-  ([lib-name source-path bc-path]
-   (generate-lib-ns lib-name bc-path (funcs-in-file source-path)))
-  ([lib-name source-path bc-path opts]
-   (generate-lib-ns lib-name bc-path (funcs-in-file source-path) opts)))
-
-(defn eval-lib-res
-  [forms]
-  (let [ns *ns*]
-    (doseq [f forms]
-      (eval f))
-    (in-ns (ns-name ns))))
-
-(defn persist-lib-res
-  [path forms]
-  (with-open [wrtr (io/writer path)]
-    (.write wrtr ";; This file is autogenerated -- probably shouldn't modify it by hand\n")
-    (.write wrtr
-            (with-out-str (doseq [f forms]
-                            (pprint f)
-                            (print "\n"))))))
+  (try
+    (let [[_ _ type pointers _ f-name args] (re-find prototype-regex s)
+          args (parse-args args)
+          pointer (when-let [s (seq (str/trim pointers))] (apply str s))]
+      (cond-> {:ret type 
+               :sym f-name}
+        args (merge {:args args})
+        pointer (merge {:pointer pointer})))
+    (catch Exception e
+      (println "Failed parsing" (pr-str s))
+      (throw e))))
 
 (comment
-  (def lib-forms (generate-lib-ns 'c.sdl3 "sdl_starter.o" [["int" "SDL_PollEvent"]] {:prefix ["SDL_" "_SDL_"]}))
-  
-  (def lib-forms
-    (load-lib 'c.sdl "src/sdl_starter.c" "sdl_starter.o"
-              {:prefix ["SDL_" "_SDL_"]
-               :kebab true}))  
-  
-  (eval-lib-res lib-forms)
-  
-  (System/getProperty "user.dir") 
-  
-  (persist-lib-res "src/c/sdl.clj" lib-forms)
-  
-  (require 'c.sdl)
-
-  (spit "flubber.txt" "wat")
-  
-  (load-lib 'c.sdl4 "src/sdl_starter.c" "sdl_starter.o" {:prefix ["SDL_" "_SDL_"]})
-  
-  (ns-publics 'c.sdl4)
-  
+  (parse-c-prototype "int SDL_Init(Uint32 flags)")
+  ;;=> {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]}
   )

@@ -1,5 +1,7 @@
+// includes
 #include "generated.h"
 
+// inline-c
 int GET_SDL_INIT_VIDEO() { return SDL_INIT_VIDEO; }
 int GET_SDL_WINDOW_SHOWN() { return SDL_WINDOW_SHOWN; }
 void* get_null() { return NULL; }
@@ -18,6 +20,26 @@ SDL_Event e;
 
 SDL_Event *get_e() {
   return &e;
+}
+
+// fns
+int  _SHADOWING_GET_SDL_INIT_VIDEO() {
+  return GET_SDL_INIT_VIDEO();
+}
+int  _SHADOWING_GET_SDL_WINDOW_SHOWN() {
+  return GET_SDL_WINDOW_SHOWN();
+}
+void * _SHADOWING_get_null() {
+  return get_null();
+}
+char * _SHADOWING_gen_title() {
+  return gen_title();
+}
+SDL_Rect * _SHADOWING_create_rect( int  x,  int  y,  int  w,  int  h) {
+  return create_rect(x, y, w, h);
+}
+SDL_Event * _SHADOWING_get_e() {
+  return get_e();
 }
 int  _SHADOWING_SDL_Init( Uint32  flags) {
   return SDL_Init(flags);
