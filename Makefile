@@ -2,9 +2,9 @@ clean:
 	-rm classes/*
 	-rm *.so
 	-rm woop
-	-rm src/c/*
+	-rm -r src/bindings
 	-rm -r target
-	-rm libs/*
+	-rm -r libs/*
 
 info:
 	native-image --expert-options-all
@@ -22,7 +22,7 @@ gen_ni2:
 	clang -shared -o libs/libmod_gen2.so src/mod_gen2.h -lSDL2 -fPIC
 
 
-c/sdl.clj:
+bindings:
 	lein exec -ep "(require '[create-sdl-ns]) (create-sdl-ns/-main)"
 	-rm -r target
 
@@ -32,5 +32,5 @@ polyglot: sdl_starter c/sdl.clj
 run-p:
 	lein with-profiles runner run
 
-ni: sdl_starter_ni
+ni:
 	./compile && ./woop
