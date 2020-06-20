@@ -47,7 +47,8 @@
      :forms (concat [`(ns ~lib-name
                         (:require [clojure.java.io])
                         (:import org.graalvm.polyglot.Context
-                                 org.graalvm.polyglot.Source))
+                                 org.graalvm.polyglot.Source
+                                 org.graalvm.polyglot.Value))
                      `(def ~'empty-array (object-array 0))]
                     [`(defn ~context-f-sym
                         []
@@ -64,8 +65,9 @@
                      `(def ~lib-sym (.eval (~context-f-sym) (~source-f-sym)))])}))
 
 (defn gen-lib
-  [lib-name fns opts]
+  [lib-name fns {:keys [append-clj] :as opts}]
   (let [bp (lib-boilerplate lib-name opts)
         defn-forms (apply concat (map #(gen-defn % bp) fns))]
     (concat (:forms bp)
+            append-clj
             defn-forms)))

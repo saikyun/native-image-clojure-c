@@ -1,26 +1,10 @@
 (ns gen-clj.native-image
   (:require [patch-gen-class :as pgc]
             [clojure.java.io :as io]
-            [gen-clj :refer [gen-clojure-mapping]]
+            [gen-clj :refer [gen-clojure-mapping get-type-throw]]
             [gen-c :refer [get-h-path snake-case no-subdir]]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint pp]]))
-
-(defn get-type
-  [types {:keys [type pointer]}]
-  (if-let [t (types type)]
-    (do
-      (println "found type" t "for" type)
-      (if (symbol? t)
-        t
-        (get t pointer)))
-    nil))
-
-(defn get-type-throw
-  [types t]
-  (if-let [t (get-type types t)]
-    t
-    (throw (Error. (str "No type defined for type: " t)))))
 
 (defn gen-defn
   "Takes kv pair, where k is a clojure symbol and v is proto data.

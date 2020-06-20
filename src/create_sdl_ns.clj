@@ -4,6 +4,7 @@
             [clojure.string :as str]
             
             [gen-clj.native-image :as ni]
+            [gen-clj :as gclj]
             
             [clojure.pprint :refer [pp pprint]]))
 
@@ -64,6 +65,17 @@ int SDL_FillRect(SDL_Surface*    dst,
    
    ])
 
+(def structs
+  [{:clj-sym 'SDL_Event
+    :c-sym "SDL_Event"
+    :attrs [{:sym "type" :type "int"}]}
+   {:clj-sym 'SDL_Surface
+    :c-sym "SDL_Surface"
+    :attrs [{:sym "format" :type "SDL_PixelFormat" :pointer "*"}]}
+   {:clj-sym 'SDL_PixelFormat
+    :c-sym "SDL_PixelFormat"
+    :attrs [{:sym "palette" :type "void" :pointer "*"}]}])
+
 (def types
   {"void" {"*" 'org.graalvm.nativeimage.c.type.VoidPointer
            nil 'void}
@@ -78,36 +90,11 @@ int SDL_FillRect(SDL_Surface*    dst,
    "SDL_Window" 'org.graalvm.nativeimage.c.type.VoidPointer
    "SDL_PixelFormat" 'bindings.sdl_ni.SDL_PixelFormat})
 
-(def interfaces [`(gen-interface 
-                   :name ~(with-meta 'bindings.sdl_ni.SDL_Event
-                            {org.graalvm.nativeimage.c.CContext 'bindings.sdl_ni.Headers
-                             org.graalvm.nativeimage.c.function.CLibrary "bindings$sdl"
-                             org.graalvm.nativeimage.c.struct.CStruct "SDL_Event"})
-                   :extends [org.graalvm.word.PointerBase]
-                   :methods [[~(with-meta 'type
-                                 {org.graalvm.nativeimage.c.struct.CField "type"}) []
-                              ~'int]])
-                 
-                 `(gen-interface 
-                   :name ~(with-meta 'bindings.sdl_ni.SDL_PixelFormat
-                            {org.graalvm.nativeimage.c.CContext 'bindings.sdl_ni.Headers
-                             org.graalvm.nativeimage.c.function.CLibrary "bindings$sdl"
-                             org.graalvm.nativeimage.c.struct.CStruct "SDL_PixelFormat"})
-                   :extends [org.graalvm.word.PointerBase]
-                   :methods [[~(with-meta 'palette
-                                 {org.graalvm.nativeimage.c.struct.CField "palette"}) []
-                              ~'org.graalvm.nativeimage.c.type.VoidPointer]])
-                 
-                 `(gen-interface 
-                   :name ~(with-meta 'bindings.sdl_ni.SDL_Surface
-                            {org.graalvm.nativeimage.c.CContext 'bindings.sdl_ni.Headers
-                             org.graalvm.nativeimage.c.function.CLibrary "bindings$sdl"
-                             org.graalvm.nativeimage.c.struct.CStruct "SDL_Surface"})
-                   :extends [org.graalvm.word.PointerBase]
-                   :methods [[~(with-meta 'format
-                                 {org.graalvm.nativeimage.c.struct.CField "format"})
-                              []
-                              ~'bindings.sdl_ni.SDL_PixelFormat]])])
+(def protocols-and-extend
+  (concat (map #(gclj/struct->def-protocol types %) structs)
+          (map #(gclj/struct->extend-type types %) structs)))
+
+(def interfaces (map #(gclj/struct->gen-interface types % {:lib-name 'bindings.sdl}) structs))
 
 (defn -main
   []
@@ -122,6 +109,7 @@ int SDL_FillRect(SDL_Surface*    dst,
                                [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
                                )
                :includes ["stdio.h" "SDL2/SDL.h"]
+               :append-clj protocols-and-extend
                :append-ni interfaces
                :types types
                :lib-name 'bindings.sdl

@@ -1,9 +1,16 @@
+(set! *warn-on-reflection* true)
+
 (ns repl-core-native
   (:require [clojure.java.io :as io]
             [clojure.pprint :refer [pp pprint]]
-            [bindings.sdl-ni :as sdl])
-  (:import bindings.sdl_class)
+            #_[bindings.sdl-ni :as sdl]
+            [bindings.sdl-class :as sdl]
+            [native-interop :refer [*native-image* nget]])
+  (:import bindings.sdl_class
+           org.graalvm.polyglot.Value)
   (:gen-class))
+
+(alter-var-root #'*native-image* (constantly true))
 
 (defn -main [& args]
   (println "lul")
@@ -21,10 +28,12 @@
     
     (println "format" (.rawValue (.format screen)))
     
+    (println (.type (bindings.sdl_class/get_e)))
+    
     #_(bindings.sdl_class/fill_rect screen nil (bindings.sdl_class/map_rgb (.format screen) 0xFF 0xFF 0xFF))
     (bindings.sdl_class/fill_rect screen (bindings.sdl_class/get_null) ;; just nil doesn't work for ni
-                                  (bindings.sdl_class/map_rgb (.format screen) 0xFF 0xFF 0xFF))
-    (bindings.sdl_class/fill_rect screen rect (bindings.sdl_class/map_rgb (.format screen) 0xFF 0 0))
+                                  (bindings.sdl_class/map_rgb (nget screen sdl/format) 0xFF 0xFF 0xFF))
+    (bindings.sdl_class/fill_rect screen rect (bindings.sdl_class/map_rgb (nget screen sdl/format) 0xFF 0 0))
     
     (bindings.sdl_class/update_window_surface window)
     
@@ -33,7 +42,8 @@
     
     (loop [quit false]
       (let [quit (when-not (= 0 (bindings.sdl_class/poll_event (bindings.sdl_class/get_e)))
-                   (when (= 256 (.type (bindings.sdl_class/get_e)))
+                   true
+                   (when (= 256 (nget (sdl_class/get_e) sdl/type))
                      true))]
         (if quit
           :quit

@@ -36,8 +36,7 @@
                                                                       "_SHADOWING_"]})
                                protos-as-data-shadowed))
         
-        clojure-lib (poly/gen-lib lib-name clojure-mappings
-                                  opts)]
+        clojure-lib (poly/gen-lib lib-name clojure-mappings opts)]
     (merge opts
            {:lib-name lib-name
             :c-code c-file
@@ -82,22 +81,6 @@
     res))
 
 (comment
-  
-  (pprint (parse-c-prototype "int SDL_Init(Uint32 flags, a * b, const c d)"))
-  
-  (pprint (parse-c-prototype "void SDL_Quit()"))
-  (pprint (parse-c-prototype "int* SDL_Init(Uint32 flags, a * b, c d)"))
-  
-  (-> (parse-c-prototype "int* SDL_Init(Uint32 flags, a * b, c d)")
-      generate-shadowing-function
-      println)
-  
-  (-> (parse-c-prototype "int* SDL_Init(Uint32 flags, a * b, c d)")
-      (gen-clojure-mapping {:prefixes ["SDL_"]})
-      println)
-  
-  
-  
   {'SDLEvent {:type "SDL_Event"}
    
    ;; int SDL_Init(Uint32 flags)
