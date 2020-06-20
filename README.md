@@ -18,14 +18,17 @@ I've only tested on mac.
 You need libSDL2 on your path, and possibly added to `"-Djava.library.path=<LIB_PATH_HERE>"` in `project.clj`.
 
 ```
-make clean c/sdl.clj # ignore the error that is thrown, it's just so it stops the process
+### you have to run make clean when switching between run-p and n
+make clean bindings # ignore the error that is thrown, it's just so it stops the process
 make run-p
 ```
 
 ## Steps for native-image
 
 ```
-make clean ni # this compiles using native-image then runs the binary
+### you have to run make clean when switching between run-p and ni
+make clean bindings # ignore the error that is thrown, it's just so it stops the process
+make ni # this compiles using native-image then runs the binary
 ```
 
 ## Acknowledgements
