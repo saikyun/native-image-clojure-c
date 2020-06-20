@@ -33,4 +33,4 @@ run-p:
 	lein with-profiles runner run
 
 ni:
-	./compile && ./woop
+	./compile && LD_LIBRARY_PATH=./libs ./woop

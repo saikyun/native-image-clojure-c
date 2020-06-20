@@ -3,8 +3,7 @@
 (ns repl-core-native
   (:require [clojure.java.io :as io]
             [clojure.pprint :refer [pp pprint]]
-            #_[bindings.sdl-ni :as sdl]
-            [bindings.sdl-class :as sdl]
+            [bindings.sdl-ni :as sdl]
             [native-interop :refer [*native-image* nget]])
   (:import bindings.sdl_class
            org.graalvm.polyglot.Value)
