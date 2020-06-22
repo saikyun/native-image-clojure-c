@@ -1,9 +1,9 @@
 (ns create-sdl-ns
-  (:require [spec-c-lib :as scl]
-            [parse-c :as pc]
+  (:require [parse-c :as pc]
             [clojure.string :as str]
             
             [gen-clj.native-image :as ni]
+            [gen-c :as gcee]
             [gen-clj :as gclj]
             [gen-clj.polyglot :as gp]
             
@@ -117,23 +117,26 @@ int SDL_FillRect(SDL_Surface*    dst,
   (.mkdir (java.io.File. "libs"))
   
   (println "Generating bindings.sdl")
-  (let [opts (scl/gen-and-persist
-              {:inline-c (str/join "\n" functions)
-               :protos (concat (map pc/parse-c-prototype functions)
-                               (map pc/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
-                               [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
-                               )
-               :structs structs
-               :includes ["stdio.h" "SDL2/SDL.h"]
-               :append-clj poly-interfaces #_ protocols-and-extend
-               :append-ni ni-interfaces
-               :types types
-               :lib-name 'bindings.sdl
-               :src-dir "src"
-               :lib-dir "libs"
-               :libs ["SDL2"]})
-        opts (assoc opts :ni-code (ni/gen-lib opts))]
-    (ni/persist-clj opts)
+  (let [opts {:inline-c (str/join "\n" functions)
+              :protos (concat (map pc/parse-c-prototype functions)
+                              (map pc/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
+                              [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
+                              )
+              :structs structs
+              :includes ["stdio.h" "SDL2/SDL.h"]
+              :append-clj poly-interfaces #_ protocols-and-extend
+              :append-ni ni-interfaces
+              :types types
+              :lib-name 'bindings.sdl
+              :src-dir "src"
+              :lib-dir "libs"
+              :libs ["SDL2"]}
+        opts (merge opts (gcee/gen-lib opts))
+        _ (gcee/persist-lib! opts)
+        opts (gp/gen-lib opts)
+        opts (gp/persist-lib opts)
+        opts (assoc opts :ni-code (ni/gen-lib opts))
+        opts (ni/persist-lib opts)]
     opts)
   
   (println "Done!")

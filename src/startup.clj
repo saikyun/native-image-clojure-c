@@ -1,6 +1,5 @@
 (ns startup
-  (:require [native-interop] ;; this just sets a variable
-            )
+  (:require [native-interop]) ;; this just sets *native-image*
   (:gen-class))
 
 (if native-interop/*native-image*

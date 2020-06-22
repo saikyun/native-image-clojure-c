@@ -82,8 +82,8 @@
           [(reverse (into '() (concat (gen-gen-class opts)
                                       [:methods (into [] (map #(gen-defn % opts) clojure-mappings))])))]))
 
-(defn persist-clj
-  [{:keys [ni-code lib-name]}]
+(defn persist-lib
+  [{:keys [ni-code lib-name] :as opts}]
   (with-open [wrtr (io/writer (str "src"
                                    "/"
                                    (snake-case (str/replace (str lib-name) "." "/")) "_ni.clj"))]
@@ -92,7 +92,9 @@
             (with-out-str (doseq [f ni-code]
                             (binding [*print-meta* true]
                               (prn f))
-                            (print "\n"))))))
+                            (print "\n")))))
+  
+  opts)
 
 (comment
   

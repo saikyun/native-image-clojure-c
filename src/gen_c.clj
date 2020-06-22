@@ -1,5 +1,6 @@
 (ns gen-c
   (:require [clojure.string :as str]
+            [catamari.core :refer [add-prefix-to-sym create-subdirs!]]
             [clojure.java.shell :refer [sh]]))
 
 (defn snake-case
@@ -81,22 +82,39 @@
          "\n\n"
          (str/join "\n" fn-declarations))))
 
+(defn gen-lib
+  [{:keys [lib-name includes protos shadow-prefix] :or {shadow-prefix "_SHADOWING_"} :as opts}]
+  (let [c-code (gen-c-file [(str (last (str/split (snake-case lib-name) #"/")) ".h")]
+                           (map generate-shadowing-function protos)
+                           opts) 
+        protos-as-data-shadowed (map (partial add-prefix-to-sym shadow-prefix) protos)
+        h-code (gen-h-file includes (map generate-c-prototype protos-as-data-shadowed))]
+    {:shadow-prefix shadow-prefix    
+     :c-code c-code
+     :h-code h-code}))
+
 (defn compile-c
   [{:keys [c-code h-code libs] :as opts}]
   (let [c-path (get-c-path opts)
         h-path (get-h-path opts)]
+    
+    (create-subdirs! c-path)
+    (create-subdirs! h-path)
+    
+    (println "Spitting c-code: " (apply str (take 100 c-code)) "...\n")
     (spit c-path c-code)
+    (println "Spitting h-code:" (apply str (take 100 h-code)) "...\n")
     (spit h-path h-code)
+
     (let [sh-opts (concat [(str (System/getenv "LLVM_TOOLCHAIN") "/clang") c-path]
                           (map #(str "-l" %) libs)
                           ["-shared" "-fPIC" "-o" (get-so-path opts)])]
       (apply sh sh-opts))))
 
-(defn persist-c
-  [res]
-  (let [{:keys [err]} (compile-c res)]
+(defn persist-lib!
+  [opts]
+  (let [{:keys [err]} (compile-c opts)]
     (when (seq err) 
       (println "ERROR:" err)
-      (println "Compilation failed:" res)
+      (println "Compilation failed with options:" opts)
       (throw (Error. err)))))
-

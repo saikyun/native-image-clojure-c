@@ -11,7 +11,7 @@ bindings:
 	lein exec -ep "(require '[create-sdl-ns]) (create-sdl-ns/-main)"
 	-rm -r target
 
-run-p:
+poly:
 	lein with-profiles runner do clean, run
 
 ni:
