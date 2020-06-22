@@ -43,26 +43,3 @@
           (recur quit))))
     
     (sdl/quit)))
-
-(comment
-  
-  org.graalvm.polyglot.HostAccess$Implementable
-  
-  (clojure.core/gen-interface :name
-                              ^{org.graalvm.polyglot.HostAccess$Implementable true}
-                              Event3
-                              :methods [[type [] int]])
-  
-  (import 'Event3)
-  (type Event)
-  (.hasMembers (sdl/get-e))
-  (.type (.as (sdl/get-e) Event3))
-  
-  (sdl/poll-event (.as (sdl/get-e) Event3))
-  
-  (get (.as (sdl/get-e) java.util.Map) "type")
-  (keys (.as (sdl/get-e) java.util.Map))
-  (.type (sdl/get-e))
-  
-  (-main)
-  )
