@@ -1,6 +1,27 @@
 (ns gen-clj.polyglot
-  (:require [gen-clj :refer [gen-clojure-mapping]]
+  (:require [clojure.string :as str]
+            [gen-clj :refer [gen-clojure-mapping get-type-throw convert-function-throw]]
             [gen-c :refer [get-so-path]]))
+
+(defn struct-sym->interface-sym
+  [lib-name sym]
+  (symbol (str lib-name "_poly." sym)))
+
+(defn attr->poly-method
+  [types {:keys [sym] :as arg}]
+  [(symbol sym) [] (get-type-throw types arg)])
+
+(defn struct->gen-interface
+  [types {:keys [c-sym clj-sym attrs]} {:keys [lib-name]}]
+  (let [java-friendly-lib-name (str/replace lib-name "-" "_")
+        context (symbol (str java-friendly-lib-name "_ni.Headers"))]
+    `(gen-interface
+      :name
+      ~(symbol (str "^" {org.graalvm.polyglot.HostAccess$Implementable true}))
+      ~(symbol (struct-sym->interface-sym lib-name clj-sym))
+      
+      :methods ~(->> (map #(attr->poly-method types %) attrs)
+                     (into [])))))
 
 (defn gen-defn
   "Takes kv pair, where k is a clojure symbol and v is proto data.
@@ -15,18 +36,33 @@
    [(def init1687 (.getMember sdl-sym \"SDL_Init\"))
     (clojure.core/defn init ([flags] (.execute init1687 (clojure.core/object-array [flags]))))]
   ```"
-  [[f-sym {:keys [ret sym args]}] {:keys [lib-sym]}]
+  [[f-sym {:keys [ret pointer sym args]}] {:keys [types lib-name lib-sym structs]}]
   (let [f (if (= ret "void")
             '.executeVoid
             '.execute)
-        f-gensym (gensym f-sym)]
+        f-gensym (gensym f-sym)
+        ret-struct (get structs ret)
+        conv-func (when-not ret-struct
+                    (convert-function-throw (get-type-throw types {:type ret
+                                                                   :pointer pointer})))
+        wrap-cast (fn [body] (if ret-struct
+                               `(~'.as ~body ~(struct-sym->interface-sym lib-name (:clj-sym ret-struct)))
+                               body))
+        wrap-convert (fn [body]
+                       (if (and conv-func (not= conv-func 'identity))
+                         `(-> ~body ~conv-func)
+                         body))]
     `[(def ~(with-meta f-gensym {:private true}) (.getMember ~lib-sym ~sym))
       (defn ~f-sym
         ~(if-let [as (seq (map (comp symbol :sym) args))]
            `(~(into [] as)
-             (~f ~f-gensym (object-array ~(into [] as))))
+             ~(-> `(~f ~f-gensym (object-array ~(into [] as)))
+                  wrap-cast
+                  wrap-convert))
            `([]
-             (~f ~f-gensym ~'empty-array))))]))
+             ~(-> `(~f ~f-gensym ~'empty-array)
+                  wrap-cast
+                  wrap-convert))))]))
 
 (comment
   (-> (gen-clojure-mapping {:ret "int", :sym "SDL_Init", :args [{:type "Uint32", :sym "flags"}]}
@@ -67,7 +103,7 @@
 (defn gen-lib
   [lib-name fns {:keys [append-clj] :as opts}]
   (let [bp (lib-boilerplate lib-name opts)
-        defn-forms (apply concat (map #(gen-defn % bp) fns))]
+        defn-forms (apply concat (map #(gen-defn % (assoc opts :lib-sym (:lib-sym bp))) fns))]
     (concat (:forms bp)
             append-clj
             defn-forms)))

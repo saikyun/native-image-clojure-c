@@ -6,9 +6,3 @@
                (not= "false" (System/getenv "NATIVE_IMAGE"))))
     (alter-var-root #'native-interop/*native-image* (constantly true))
     (alter-var-root #'native-interop/*native-image* (constantly false))))
-
-(defmacro nget
-  [v attr]
-  (if *native-image*
-    `(~(symbol (str "." (name attr))) ~v)
-    `(~attr ~v)))

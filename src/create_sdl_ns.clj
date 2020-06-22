@@ -5,6 +5,7 @@
             
             [gen-clj.native-image :as ni]
             [gen-clj :as gclj]
+            [gen-clj.polyglot :as gp]
             
             [clojure.pprint :refer [pp pprint]]))
 
@@ -61,20 +62,18 @@ SDL_Window* SDL_CreateWindow(const char* title,
 int SDL_FillRect(SDL_Surface*    dst,
                  const SDL_Rect* rect,
                  Uint32          color)
-"
-   
-   ])
+"])
 
 (def structs
-  [{:clj-sym 'SDL_Event
-    :c-sym "SDL_Event"
-    :attrs [{:sym "type" :type "int"}]}
-   {:clj-sym 'SDL_Surface
-    :c-sym "SDL_Surface"
-    :attrs [{:sym "format" :type "SDL_PixelFormat" :pointer "*"}]}
-   {:clj-sym 'SDL_PixelFormat
-    :c-sym "SDL_PixelFormat"
-    :attrs [{:sym "palette" :type "void" :pointer "*"}]}])
+  {"SDL_Event" {:clj-sym 'SDL_Event
+                :c-sym "SDL_Event"
+                :attrs [{:sym "type" :type "int"}]}
+   "SDL_Surface" {:clj-sym 'SDL_Surface
+                  :c-sym "SDL_Surface"
+                  :attrs [{:sym "format" :type "SDL_PixelFormat" :pointer "*"}]}
+   "SDL_PixelFormat" {:clj-sym 'SDL_PixelFormat
+                      :c-sym "SDL_PixelFormat"
+                      :attrs [{:sym "palette" :type "void" :pointer "*"}]}})
 
 (def types
   {"void" {"*" 'org.graalvm.nativeimage.c.type.VoidPointer
@@ -91,10 +90,26 @@ int SDL_FillRect(SDL_Surface*    dst,
    "SDL_PixelFormat" 'bindings.sdl_ni.SDL_PixelFormat})
 
 (def protocols-and-extend
-  (concat (map #(gclj/struct->def-protocol types % {:lib-name 'bindings.sdl}) structs)
-          (map #(gclj/struct->extend-type types % {:lib-name 'bindings.sdl}) structs)))
+  (concat (map #(gclj/struct->def-protocol types % {:lib-name 'bindings.sdl}) (vals structs))
+          (map #(gclj/struct->extend-type types % {:lib-name 'bindings.sdl}) (vals structs))))
 
-(def interfaces (map #(gclj/struct->gen-interface types % {:lib-name 'bindings.sdl}) structs))
+(def ni-interfaces (map #(gclj/struct->gen-ni-interface types % {:lib-name 'bindings.sdl}) (vals structs)))
+
+(def poly-types
+  {"void" {"*" 'org.graalvm.nativeimage.c.type.VoidPointer
+           nil 'void}
+   "int" 'int
+   "char" {"*" 'org.graalvm.nativeimage.c.type.CCharPointer
+           nil 'char}
+   "Uint32" 'int
+   "Uint8" 'int
+   "SDL_Surface" 'bindings.sdl_poly.SDL_Surface
+   "SDL_Rect" 'org.graalvm.nativeimage.c.type.VoidPointer
+   "SDL_Event" 'bindings.sdl_poly.SDL_Event
+   "SDL_Window" 'org.graalvm.nativeimage.c.type.VoidPointer
+   "SDL_PixelFormat" 'bindings.sdl_poly.SDL_PixelFormat})
+
+(def poly-interfaces (map #(gp/struct->gen-interface poly-types % {:lib-name 'bindings.sdl}) (vals structs)))
 
 (defn -main
   []
@@ -108,9 +123,10 @@ int SDL_FillRect(SDL_Surface*    dst,
                                (map pc/parse-c-prototype prototypes) ;; utility function for turning c-prototypes into clojure data
                                [{:ret "void", :sym "SDL_Quit"}] ;; we can also just provide the data manually
                                )
+               :structs structs
                :includes ["stdio.h" "SDL2/SDL.h"]
-               :append-clj protocols-and-extend
-               :append-ni interfaces
+               :append-clj poly-interfaces #_ protocols-and-extend
+               :append-ni ni-interfaces
                :types types
                :lib-name 'bindings.sdl
                :src-dir "src"

@@ -54,13 +54,13 @@
     t
     (throw (Error. (str "No type defined for type: " t)))))
 
-(defn attr->method
+(defn attr->ni-method
   [types {:keys [sym] :as arg}]
   [(with-meta (symbol sym)
      {org.graalvm.nativeimage.c.struct.CField sym}) []
    (get-type-throw types arg)])
 
-(defn struct->gen-interface
+(defn struct->gen-ni-interface
   [types {:keys [c-sym clj-sym attrs]} {:keys [lib-name]}]
   (let [java-friendly-lib-name (str/replace lib-name "-" "_")
         context (symbol (str java-friendly-lib-name "_ni.Headers"))]
@@ -70,13 +70,17 @@
                 org.graalvm.nativeimage.c.function.CLibrary (no-subdir lib-name)
                 org.graalvm.nativeimage.c.struct.CStruct c-sym})
       :extends [org.graalvm.word.PointerBase]
-      :methods ~(->> (map #(attr->method types %) attrs)
+      :methods ~(->> (map #(attr->ni-method types %) attrs)
                      (into [])))))
 
 (def convert-function
   {'int '.asInt
    'bindings.sdl_ni.SDL_PixelFormat 'identity
-   'org.graalvm.nativeimage.c.type.VoidPointer 'identity})
+   'org.graalvm.nativeimage.c.type.VoidPointer 'identity
+
+   'org.graalvm.nativeimage.c.type.CCharPointer 'identity #_ '.asString ;; at least constant char* can't be coerced into strings
+   'void 'identity
+   'char `(~'.as Character)})
 
 (defn convert-function-throw
   [t]
@@ -99,9 +103,12 @@
 
 (defn attr->func-implementation
   [types {:keys [sym] :as arg}]
-  `(~(symbol sym) [~'this]
-    (-> (~'.getMember ~'this ~sym)
-        ~(convert-function-throw (get-type-throw types arg)))))
+  (let [f (convert-function-throw (get-type-throw types arg))]
+    `(~(symbol sym) [~'this]
+      ~(if (= f 'identity)
+         (~'.getMember ~'this ~sym)
+         (-> (~'.getMember ~'this ~sym)
+             ~f)))))
 
 (defn struct->extend-type
   [types {:keys [clj-sym attrs]} {:keys [lib-name]}]
