@@ -30,7 +30,7 @@ polyglot: sdl_starter c/sdl.clj
 	lein with-profiles runner run
 
 run-p:
-	lein with-profiles runner run
+	lein with-profiles runner do clean, run
 
 ni:
 	./compile && LD_LIBRARY_PATH=./libs ./woop
