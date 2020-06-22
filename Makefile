@@ -11,8 +11,8 @@ bindings:
 	lein exec -ep "(require '[create-sdl-ns]) (create-sdl-ns/-main)"
 	-rm -r target
 
-poly:
+poly: bindings
 	lein with-profiles runner do clean, run
 
-ni:
+ni: bindings
 	NATIVE_IMAGE=true ./compile && LD_LIBRARY_PATH=./libs ./woop

@@ -137,7 +137,8 @@ int SDL_FillRect(SDL_Surface*    dst,
   
   (println "Done!")
   
-  (throw (Error. "Ugly fix -- for some reason it won't quit unless I throw an error.")))
+  (shutdown-agents) ;; need this when running lein exec
+  )
 
 (comment
   (-main)
