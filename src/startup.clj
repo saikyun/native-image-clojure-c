@@ -2,7 +2,10 @@
   (:require [native-interop :refer [nget]])
   (:gen-class))
 
-#_ (alter-var-root #'native-interop/*native-image* (constantly true))
+(if (or (some? (System/getenv "NATIVE_IMAGE"))
+        (not= "false" (System/getenv "NATIVE_IMAGE")))
+  (alter-var-root #'native-interop/*native-image* (constantly true))
+  (alter-var-root #'native-interop/*native-image* (constantly false)))
 
 (if native-interop/*native-image*
   (do (require '[bindings.sdl_ni])             ;; without this, sdl bindings won't get compiled

@@ -28,4 +28,4 @@ args=( "-jar" "target/woop-0.0.1-standalone.jar" \
               # "-J-Xmx3g"
      )
 
-$GRAALVM_HOME/bin/native-image "${args[@]}"
+NATIVE_IMAGE=true $GRAALVM_HOME/bin/native-image "${args[@]}"
