@@ -15,4 +15,4 @@ run-p:
 	lein with-profiles runner do clean, run
 
 ni:
-	NATIVE_IMAGE=true ./compile && NATIVE_IMAGE=true LD_LIBRARY_PATH=./libs ./woop
+	NATIVE_IMAGE=true ./compile && LD_LIBRARY_PATH=./libs ./woop
