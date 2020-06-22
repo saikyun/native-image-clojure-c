@@ -1,10 +1,29 @@
-(ns gen-clj.native-image
+(ns catamari.native-image
   (:require [patch-gen-class :as pgc]
             [clojure.java.io :as io]
-            [gen-clj :refer [gen-clojure-mapping get-type-throw]]
-            [gen-c :refer [get-h-path snake-case no-subdir]]
+            [catamari.clj-common :refer [gen-clojure-mapping get-type-throw]]
+            [catamari.util :refer [get-h-path snake-case no-subdir]]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint pp]]))
+
+(defn attr->method
+  [types {:keys [sym] :as arg}]
+  [(with-meta (symbol sym)
+     {org.graalvm.nativeimage.c.struct.CField sym}) []
+   (get-type-throw types arg)])
+
+(defn struct->gen-interface
+  [types {:keys [c-sym clj-sym attrs]} {:keys [lib-name]}]
+  (let [java-friendly-lib-name (str/replace lib-name "-" "_")
+        context (symbol (str java-friendly-lib-name "_ni.Headers"))]
+    `(gen-interface
+      :name ~(with-meta (symbol (str lib-name "_ni." clj-sym))
+               {org.graalvm.nativeimage.c.CContext context
+                org.graalvm.nativeimage.c.function.CLibrary (no-subdir lib-name)
+                org.graalvm.nativeimage.c.struct.CStruct c-sym})
+      :extends [org.graalvm.word.PointerBase]
+      :methods ~(->> (map #(attr->method types %) attrs)
+                     (into [])))))
 
 (defn gen-defn
   "Takes kv pair, where k is a clojure symbol and v is proto data.
@@ -96,59 +115,4 @@
   
   opts)
 
-(comment
-  
-  (do (def gl (gen-lib {:c-name "generated"
-                        :class-name 'sdl_native_lib
-                        :types types
-                        :context 'Headers
-                        :append-ni [`(gen-interface 
-                                      :name ~(with-meta 'sdl_native.SDL_Event
-                                               {org.graalvm.nativeimage.c.CContext 'gen_sdl_native_lib.Headers
-                                                org.graalvm.nativeimage.c.function.CLibrary "generated"
-                                                org.graalvm.nativeimage.c.struct.CStruct "SDL_Event"})
-                                      :extends [org.graalvm.word.PointerBase]
-                                      :methods [[~(with-meta 'type
-                                                    {org.graalvm.nativeimage.c.struct.CField "type"}) []
-                                                 ~'int]])
-                                    
-                                    `(gen-interface 
-                                      :name ~(with-meta 'sdl_native.SDL_PixelFormat
-                                               {org.graalvm.nativeimage.c.CContext 'gen_sdl_native_lib.Headers
-                                                org.graalvm.nativeimage.c.function.CLibrary "generated"
-                                                org.graalvm.nativeimage.c.struct.CStruct "SDL_PixelFormat"})
-                                      :extends [org.graalvm.word.PointerBase]
-                                      :methods [[~(with-meta 'palette
-                                                    {org.graalvm.nativeimage.c.struct.CField "palette"}) []
-                                                 ~'org.graalvm.nativeimage.c.type.VoidPointer]])
-                                    
-                                    `(gen-interface 
-                                      :name ~(with-meta 'sdl_native.SDL_Surface
-                                               {org.graalvm.nativeimage.c.CContext 'gen_sdl_native_lib.Headers
-                                                org.graalvm.nativeimage.c.function.CLibrary "generated"
-                                                org.graalvm.nativeimage.c.struct.CStruct "SDL_Surface"})
-                                      :extends [org.graalvm.word.PointerBase]
-                                      :methods [[~(with-meta 'format
-                                                    {org.graalvm.nativeimage.c.struct.CField "format"})
-                                                 []
-                                                 ~'sdl_native.SDL_PixelFormat]])]
-                        
-                        :protos (->> [{:ret "int",
-                                       :sym "_SHADOWING_SDL_Init",
-                                       :args [{:type "Uint32", :sym "flags"}]}]
-                                     (map #(gen-clojure-mapping % {:prefixes ["_SHADOWING_SDL_"]})))}))
-      
-      (pprint gl))
-  
-  (binding [*print-meta* true] (prn gl))
-  
-  
-  
-  
-  
-  (->> gl
-       (persist-clj 'gen_sdl_native_lib))
-  
-  
-  
-  )
+

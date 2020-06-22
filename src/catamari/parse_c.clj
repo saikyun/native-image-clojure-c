@@ -1,4 +1,4 @@
-(ns parse-c
+(ns catamari.parse-c
   (:require [clojure.string :as str]))
 
 (def arg-s (str "\\s*"

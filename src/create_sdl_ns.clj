@@ -1,11 +1,11 @@
 (ns create-sdl-ns
-  (:require [parse-c :as pc]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             
-            [gen-clj.native-image :as ni]
-            [gen-c :as gcee]
-            [gen-clj :as gclj]
-            [gen-clj.polyglot :as gp]
+            [catamari.parse-c :as pc] 
+            
+            [catamari.native-image :as ni]
+            [catamari.polyglot :as gp]
+            [catamari.gen-c :as gcee]
             
             [clojure.pprint :refer [pp pprint]]))
 
@@ -89,11 +89,7 @@ int SDL_FillRect(SDL_Surface*    dst,
    "SDL_Window" 'org.graalvm.nativeimage.c.type.VoidPointer
    "SDL_PixelFormat" 'bindings.sdl_ni.SDL_PixelFormat})
 
-(def protocols-and-extend
-  (concat (map #(gclj/struct->def-protocol types % {:lib-name 'bindings.sdl}) (vals structs))
-          (map #(gclj/struct->extend-type types % {:lib-name 'bindings.sdl}) (vals structs))))
-
-(def ni-interfaces (map #(gclj/struct->gen-ni-interface types % {:lib-name 'bindings.sdl}) (vals structs)))
+(def ni-interfaces (map #(ni/struct->gen-interface types % {:lib-name 'bindings.sdl}) (vals structs)))
 
 (def poly-types
   {"void" {"*" 'org.graalvm.nativeimage.c.type.VoidPointer

@@ -1,8 +1,7 @@
-(ns gen-clj.polyglot
+(ns catamari.polyglot
   (:require [clojure.string :as str]
-            [catamari.core :refer [add-prefix-to-sym create-subdirs!]]
-            [gen-clj :refer [gen-clojure-mapping get-type-throw convert-function-throw]]
-            [gen-c :refer [get-so-path]]
+            [catamari.util :refer [add-prefix-to-sym create-subdirs! get-so-path]]
+            [catamari.clj-common :refer [gen-clojure-mapping get-type-throw convert-function-throw]]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pp pprint]]))
 
@@ -15,9 +14,8 @@
   [(symbol sym) [] (get-type-throw types arg)])
 
 (defn struct->gen-interface
-  [types {:keys [c-sym clj-sym attrs]} {:keys [lib-name]}]
-  (let [java-friendly-lib-name (str/replace lib-name "-" "_")
-        context (symbol (str java-friendly-lib-name "_ni.Headers"))]
+  [types {:keys [clj-sym attrs]} {:keys [lib-name]}]
+  (let [java-friendly-lib-name (str/replace lib-name "-" "_")]
     `(gen-interface
       :name
       ~(symbol (str "^" {org.graalvm.polyglot.HostAccess$Implementable true}))

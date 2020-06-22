@@ -1,29 +1,7 @@
-(ns gen-c
+(ns catamari.gen-c
   (:require [clojure.string :as str]
-            [catamari.core :refer [add-prefix-to-sym create-subdirs!]]
+            [catamari.util :refer [add-prefix-to-sym create-subdirs! snake-case get-c-path get-h-path get-so-path]]
             [clojure.java.shell :refer [sh]]))
-
-(defn snake-case
-  [s]
-  (-> s
-      (str/replace "-" "_")
-      (str/replace "." "/")))
-
-(defn no-subdir
-  [s]
-  (snake-case (str/replace s "." "$")))
-
-(defn get-c-path
-  [{:keys [src-dir lib-name]}]
-  (str src-dir "/" (snake-case lib-name) ".c"))
-
-(defn get-h-path
-  [{:keys [src-dir lib-name]}]
-  (str src-dir "/" (snake-case lib-name) ".h"))
-
-(defn get-so-path
-  [{:keys [lib-dir lib-name]}]
-  (str lib-dir "/lib" (no-subdir lib-name) ".so"))
 
 (defn generate-shadowing-function
   "Takes prototype data and generates a c function declaration.
