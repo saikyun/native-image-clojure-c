@@ -3,3 +3,6 @@
 /*.so
 /target
 /woop
+/.lein-repl-history
+/libs
+/src/bindings
