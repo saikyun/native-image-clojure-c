@@ -91,8 +91,8 @@ int SDL_FillRect(SDL_Surface*    dst,
    "SDL_PixelFormat" 'bindings.sdl_ni.SDL_PixelFormat})
 
 (def protocols-and-extend
-  (concat (map #(gclj/struct->def-protocol types %) structs)
-          (map #(gclj/struct->extend-type types %) structs)))
+  (concat (map #(gclj/struct->def-protocol types % {:lib-name 'bindings.sdl}) structs)
+          (map #(gclj/struct->extend-type types % {:lib-name 'bindings.sdl}) structs)))
 
 (def interfaces (map #(gclj/struct->gen-interface types % {:lib-name 'bindings.sdl}) structs))
 

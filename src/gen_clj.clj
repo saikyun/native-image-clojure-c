@@ -89,10 +89,13 @@
   `(~(symbol sym) [~'this]))
 
 (defn struct->def-protocol
-  [types {:keys [clj-sym attrs]}]
-  (concat `(defprotocol
-               ~(symbol (str clj-sym "P")))
-          (map attr->protocol-func attrs)))
+  [types {:keys [clj-sym attrs]} {:keys [lib-name]}]
+  `(do (ns ~(symbol (str lib-name "." clj-sym)))
+       ~(concat
+         `(defprotocol
+              ~(symbol (str clj-sym)))
+         (map attr->protocol-func attrs))
+       (in-ns '~(symbol (str lib-name "-ns")))))
 
 (defn attr->func-implementation
   [types {:keys [sym] :as arg}]
@@ -101,9 +104,9 @@
         ~(convert-function-throw (get-type-throw types arg)))))
 
 (defn struct->extend-type
-  [types {:keys [clj-sym attrs]}]
+  [types {:keys [clj-sym attrs]} {:keys [lib-name]}]
   (concat `(extend-type org.graalvm.polyglot.Value
-             ~(symbol (str clj-sym "P")))
+             ~(symbol (str lib-name "." clj-sym) (str clj-sym)))
           (map #(attr->func-implementation types %) attrs)))
 
 (comment
