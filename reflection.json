@@ -1,6 +1,6 @@
 [
   {
-    "name": "bindings.sdl_class",
+    "name": "bindings.sdl",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,

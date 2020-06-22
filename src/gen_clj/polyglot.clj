@@ -44,7 +44,7 @@
     {:lib-name lib-name
      :libs libs
      :lib-sym lib-sym
-     :forms (concat [`(ns ~lib-name
+     :forms (concat [`(ns ~(symbol (str lib-name "-ns"))
                         (:require [clojure.java.io])
                         (:import org.graalvm.polyglot.Context
                                  org.graalvm.polyglot.Source

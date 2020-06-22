@@ -40,7 +40,7 @@
   [{:keys [lib-name]}]
   (let [java-friendly-lib-name (str/replace lib-name "-" "_")]
     `(pgc/gen-class-native
-      :name ~(with-meta (symbol (str java-friendly-lib-name "_class"))
+      :name ~(with-meta (symbol (str java-friendly-lib-name))
                {org.graalvm.nativeimage.c.CContext (symbol (str java-friendly-lib-name "_ni.Headers"))
                 org.graalvm.nativeimage.c.function.CLibrary (no-subdir lib-name)}))))
 
