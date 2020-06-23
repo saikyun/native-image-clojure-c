@@ -1,8 +1,8 @@
-(ns startup
-  (:require [native-interop]) ;; this just sets *native-image*
+(ns catamari.examples.sdl.startup
+  (:require [catamari.native-interop :refer [*native-image*]]) ;; this just sets *native-image*
   (:gen-class))
 
-(if native-interop/*native-image*
+(if *native-image*
   (do (println "In native image context")
       (require '[bindings.sdl_ni])             ;; without this, sdl bindings won't get compiled
       (import '[bindings sdl]))

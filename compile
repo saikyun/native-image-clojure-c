@@ -12,20 +12,18 @@ fi
 
 lein with-profiles +clojure-1.10.2-alpha1 do clean, uberjar
 
-args=( "-jar" "target/woop-0.0.1-standalone.jar" \
+args=( "-jar" "target/examples_sdl.jar" \
               "-H:CLibraryPath=libs" \
-              "-H:Name=woop" \
+              "-H:Name=sdl_example" \
               "-H:+ReportExceptionStackTraces" \
               "-J-Dclojure.spec.skip-macros=true" \
               "-J-Dclojure.compiler.direct-linking=true" \
               "--initialize-at-build-time"  \
-              "-H:ReflectionConfigurationFiles=reflection.json"
-              "-H:Log=registerResource:" \
+	      "-H:Log=registerResource:" \
               "--verbose" \
               "--no-fallback" \
               "--no-server" \
               "--report-unsupported-elements-at-runtime"
-              # "-J-Xmx3g"
      )
 
 $GRAALVM_HOME/bin/native-image "${args[@]}"

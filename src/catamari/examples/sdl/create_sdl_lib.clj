@@ -1,4 +1,4 @@
-(ns create-sdl-ns
+(ns catamari.examples.sdl.create-sdl-lib
   (:require [clojure.string :as str]
             
             [catamari.parse-c :as pc] 
@@ -143,4 +143,3 @@ int SDL_FillRect(SDL_Surface*    dst,
 (comment
   (-main)
   )
-

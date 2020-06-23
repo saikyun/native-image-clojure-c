@@ -1,4 +1,4 @@
-(ns patch-gen-class
+(ns catamari.patch-gen-class
   (:import [clojure.asm Opcodes Type]
            java.lang.reflect.Modifier
            [clojure.asm.commons Method GeneratorAdapter]))

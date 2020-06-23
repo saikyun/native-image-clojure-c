@@ -1,5 +1,5 @@
 (ns catamari.native-image
-  (:require [patch-gen-class :as pgc]
+  (:require [catamari.patch-gen-class :as pgc]
             [clojure.java.io :as io]
             [catamari.clj-common :refer [gen-clojure-mapping get-type-throw]]
             [catamari.util :refer [get-h-path snake-case no-subdir]]
@@ -74,7 +74,7 @@
 (defn gen-lib
   [{:keys [lib-name clojure-mappings append-ni] :as opts}]
   (concat [`(ns ~(symbol (str (name lib-name) "-ni"))
-              (:require [~'patch-gen-class])
+              (:require [~'catamari.patch-gen-class])
               (:import org.graalvm.word.PointerBase
                        org.graalvm.nativeimage.c.struct.CField
                        org.graalvm.nativeimage.c.CContext
