@@ -19,7 +19,7 @@ You need libSDL2 on your path, and possibly added to `"-Djava.library.path=<LIB_
 
 ```
 make clean bindings # ignore the error that is thrown, it's just so it stops the process
-make run-p
+make poly
 ```
 
 ## Steps for native-image
