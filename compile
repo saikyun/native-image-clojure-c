@@ -10,7 +10,11 @@ fi
 # if one wants to use :sci
 # lein with-profiles +sci,+clojure-1.10.2-alpha1 do clean, uberjar
 
-lein with-profiles +clojure-1.10.2-alpha1 do clean, uberjar
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    lein with-profiles +clojure-1.10.2-alpha1,+linux do clean, uberjar
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    lein with-profiles +clojure-1.10.2-alpha1,+macos do clean, uberjar
+fi
 
 args=( "-jar" "target/examples_sdl.jar" \
               "-H:CLibraryPath=libs" \

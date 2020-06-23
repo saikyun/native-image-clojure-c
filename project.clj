@@ -9,16 +9,20 @@
                        :global-vars {*assert* false}
                        :uberjar-name "examples_sdl.jar"
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"
-                                  "-Dclojure.spec.skip-macros=true"
-                                  "-Djava.library.path=/usr/local/lib"]
+                                  "-Dclojure.spec.skip-macros=true"]
                        :aot :all}
              
              :runner {:main catamari.examples.sdl.startup
                       :source-paths ["src"]
                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"
-                                 "-Dclojure.spec.skip-macros=true"
-                                 "-XstartOnFirstThread"
-                                 "-Djava.library.path=/usr/local/lib"]}
+                                 "-Dclojure.spec.skip-macros=true"]}
+             
+             :macos {:jvm-opts ["-XstartOnFirstThread"
+                                ;; needed to find libSDL2 on macos
+                                "-Djava.library.path=/usr/local/lib"]}
+             
+             :linux {:jvm-opts [;; needed to find libSDL2 on linux       
+                                "-Djava.library.path=/usr/lib/x86_64-linux-gnu"]}
              
              :clojure-1.10.2-alpha1 {:dependencies [[org.clojure/clojure "1.10.2-alpha1"]]}
              :socket {:jvm-opts ["-Dclojure.server.repl={:port 5555 :accept clojure.core.server/repl}"]}
